@@ -17,17 +17,29 @@
                 <a (click)="goReservationQnaPage()" class="btn-link">문의하기</a>
             </div>
             <div class="reservation-summary">
-                <h2 class="product-title">[{{res.categories[0].name}}] [{{res.items[0].flight.tripTypeName}}] {{res.bookingName}}</h2>
+                <h2 class="product-title">[{{res.items[0].flight.tripTypeName}}] {{res.bookingName}}</h2>
                 <ul>
                     <li>
                         <span>여행일</span>
-                        <span>{{res.items[0].travelFromDate | date:'y.MM.dd'}} - {{res.items[0].travelToDate | date:'y.MM.dd'}}
-                            <!-- <ng-container *ngIf="res.items[0].travelToDate === 0"></ng-container> -->
-                        </span>
+
+                        <ng-container [ngSwitch]="res.items[0].flight.tripTypeName">
+                            <ng-container *ngSwitchCase="'편도'">
+                                {{res?.travelFromDate | date:'y.MM.dd'}}
+                                <span class="icon md wifi"></span>
+                            </ng-container>
+                            <ng-container *ngSwitchCase="'왕복'">
+                                {{res?.travelFromDate | date:'y.MM.dd'}} - {{res?.travelToDate | date:'y.MM.dd'}}
+                            </ng-container>
+                            <ng-container *ngSwitchCase="'다구간'">
+                                {{res?.travelFromDate | date:'y.MM.dd'}} - {{res?.travelToDate | date:'y.MM.dd'}}
+                            </ng-container>
+                        </ng-container>
+
                     </li>
                     <li>
                         <span>항공사</span>
-                        <span>{{res.items[0].flight.airlineNameList}}
+                        <span>
+                            {{res.items[0].flight.airlineNameList}}
                             <!-- <ng-container *ngIf="res.items[0].flight.airlineNameList === res.items[0].flight.airlineNameList">{{res.items.flight.airlineNameList}}</ng-container> -->
                         </span>
                     </li>

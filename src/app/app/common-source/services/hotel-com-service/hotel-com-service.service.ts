@@ -6,6 +6,8 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import * as _ from 'lodash';
 import * as qs from 'qs';
 
+import { ConfigInfo } from '../../models/common/modal.model';
+
 import { HotelModalTravelerOptionComponent } from '../../modal-components/hotel-modal-traveler-option/hotel-modal-traveler-option.component';
 import { CommonModalAlertComponent } from '../../modal-components/common-modal-alert/common-modal-alert.component';
 
@@ -38,13 +40,7 @@ export class HotelComService {
         // 모달 전달 데이터
         const initialState = $isType;
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalService.show(HotelModalTravelerOptionComponent, { initialState, ...configInfo });
+        this.bsModalService.show(HotelModalTravelerOptionComponent, { initialState, ...ConfigInfo });
     }
 
     makeRoomCondition($travelerOpt) {
@@ -301,12 +297,8 @@ export class HotelComService {
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     /**

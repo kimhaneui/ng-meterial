@@ -1,13 +1,17 @@
 import { Component, OnInit, Inject, PLATFORM_ID, ViewChild, OnDestroy } from '@angular/core';
-import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
-import { Observable, Subscription } from 'rxjs';
-import { AgmMap, ControlPosition } from '@agm/core';
+import { Subscription } from 'rxjs';
+
 import { Store } from '@ngrx/store';
-import { takeWhile } from 'rxjs/operators';
-import * as _ from 'lodash';
-import { BsModalRef } from 'ngx-bootstrap/modal';
 
 import * as hotelSearchRoomtypeSelector from 'src/app/store/hotel-search-roomtype-page/hotel-search-roomtype/hotel-search-roomtype.selectors';
+
+import { BsModalRef } from 'ngx-bootstrap/modal';
+
+import { AgmMap, ControlPosition } from '@agm/core';
+
+import * as _ from 'lodash';
+
+import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 
 declare var google: any;
 
@@ -25,8 +29,6 @@ export class HotelModalLocationMapComponent extends BaseChildComponent implement
     loadingBool: boolean = false;
     hotelRoomtypeRq: any;
     hotelInfo: any;
-    hotelRoomtypeInfo$: Observable<any>;
-    hotelRoomtypeRq$: Observable<any>;
     private subscriptionList: Subscription[];
 
     constructor(
@@ -44,7 +46,6 @@ export class HotelModalLocationMapComponent extends BaseChildComponent implement
         const bodyEl = document.getElementsByTagName('body')[0];
         bodyEl.classList.add('overflow-none');
 
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -58,18 +59,6 @@ export class HotelModalLocationMapComponent extends BaseChildComponent implement
             }
         );
     }
-    /**
-     * 옵저버블 초기화
-     */
-    observableInit() {
-        this.hotelRoomtypeInfo$ = this.store.select(
-            hotelSearchRoomtypeSelector.getSelectId(['hotel-information-rs'])
-        );
-
-        this.hotelRoomtypeRq$ = this.store.select(
-            hotelSearchRoomtypeSelector.getSelectId(['hotel-roomtype-rq-info'])
-        );
-    }
 
     /**
      * 서브스크라이브 초기화
@@ -78,8 +67,8 @@ export class HotelModalLocationMapComponent extends BaseChildComponent implement
         console.info('[hotelRoomtypeRq>> subscribeInit]');
 
         this.subscriptionList.push(
-            this.hotelRoomtypeInfo$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelSearchRoomtypeSelector.getSelectId(['hotel-information-rs']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelRoomtypeInfo$ > subscribe]', ev);
@@ -91,8 +80,8 @@ export class HotelModalLocationMapComponent extends BaseChildComponent implement
         );
 
         this.subscriptionList.push(
-            this.hotelRoomtypeRq$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelSearchRoomtypeSelector.getSelectId(['hotel-roomtype-rq-info']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelRoomtypeRq$ > subscribe]', ev);

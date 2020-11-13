@@ -118,7 +118,6 @@ export class ActivityBookingPaymentPageComponent extends BasePageComponent imple
 
     private sessionInit() {
         const sessionItem = JSON.parse(localStorage.getItem(ActivityStore.STORE_COMMON));
-        console.log('세세세ㅔ세세세 셔셔셔셔셔셔셔ㅕㅅ 션 : ', sessionItem);
         if (!_.isEmpty(sessionItem.activitySessionStorages.entities)) {
             this.dataModel.bookingResponse = _.cloneDeep(sessionItem.activitySessionStorages.entities[ActivityStore.STORE_BOOKING_RS].result);
             const request = this.activityComS.afterEncodingRq(
@@ -137,13 +136,13 @@ export class ActivityBookingPaymentPageComponent extends BasePageComponent imple
 
     private viewModelSet() {
         console.log('뭐가 나올까요? 궁금하네요 : ', this.dataModel);
-        this.viewModel.inicisPayment.P_OID = this.dataModel.bookingResponse.bookingItems[0].bookingItemCode;
+        this.viewModel.inicisPayment.P_OID = this.dataModel.bookingResponse.bookingItemCode;
         this.viewModel.inicisPayment.P_GOODS = this.dataModel.optionView.options[0].optionNameLn;
         this.viewModel.inicisPayment.P_AMT = this.dataModel.optionView.amountSum;
         this.viewModel.inicisPayment.P_UNAME = this.dataModel.user.name;
         this.viewModel.inicisPayment.P_MOBILE = this.dataModel.user.mobileNo;
         this.viewModel.inicisPayment.P_EMAIL = this.dataModel.user.emailAddress;
-        this.viewModel.inicisPayment.P_NOTI = `callBack=${ActivityCommon.PAGE_BOOKING_COMPLETE}&code=${this.dataModel.bookingResponse.bookingItems[0].bookingItemCode}`;
+        this.viewModel.inicisPayment.P_NOTI = `callBack=${ActivityCommon.PAGE_BOOKING_COMPLETE}&code=${this.dataModel.bookingResponse.bookingItemCode}`;
     }
 
     /**
@@ -179,3 +178,5 @@ export class ActivityBookingPaymentPageComponent extends BasePageComponent imple
         this.inicisForm.nativeElement.submit();
     }
 }
+
+

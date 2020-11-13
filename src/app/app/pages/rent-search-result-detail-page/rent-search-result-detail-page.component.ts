@@ -140,7 +140,7 @@ export class RentSearchResultDetailPageComponent extends BasePageComponent imple
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     },
                     () => {
                         this.loadingBool = true;

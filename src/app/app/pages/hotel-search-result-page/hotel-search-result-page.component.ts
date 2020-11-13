@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 
-import { Store, select } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 //store
 import { clearHotelModalCalendars } from 'src/app/store/hotel-common/hotel-modal-calendar/hotel-modal-calendar.actions';
@@ -12,9 +12,7 @@ import { clearHotelModalDestinations } from 'src/app/store/hotel-common/hotel-mo
 import { clearHotelModalTravelerOptions } from 'src/app/store/hotel-common/hotel-modal-traveler-option/hotel-modal-traveler-option.actions';
 import { clearHotelModalDetailOptions } from '../../store/hotel-common/hotel-modal-detail-option/hotel-modal-detail-option.actions';
 import { upsertHotelSearchResult } from 'src/app/store/hotel-search-result-page/hotel-search-result/hotel-search-result.actions';
-import { upsertHotelMainSearch } from 'src/app/store/hotel-main-page/hotel-main-search/hotel-main-search.actions';
 
-import { getSelectId } from 'src/app/store/hotel-search-result-page/hotel-search-result/hotel-search-result.selectors';
 
 import { TranslateService } from '@ngx-translate/core';
 import { LoadingBarService } from '@ngx-loading-bar/core';
@@ -31,6 +29,9 @@ import { ApiHotelService } from 'src/app/api/hotel/api-hotel.service';
 import { HotelSearchResultService } from './services/hotel-search-result/hotel-search-result.service';
 import { HotelComService } from 'src/app/common-source/services/hotel-com-service/hotel-com-service.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
+import { BackBtnService } from '@/app/common-source/services/back-btn-service/back-btn.service';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
@@ -67,8 +68,6 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
     loadingBool: boolean = false;
     isSearchDone: boolean = false;
 
-    hotelListRes$: Observable<any>;
-
     bsModalDetailRef: any;
     bsModalAlignRef: any;
     bsModalMapRef: any;
@@ -100,7 +99,8 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
         private _service: HotelSearchResultService,
         private loadingBar: LoadingBarService,
         private countdownTimerService: CountdownTimerService,
-        private alertService: ApiAlertService
+        private alertService: ApiAlertService,
+        private backBtnS: BackBtnService
     ) {
         super(
             platformId,
@@ -167,7 +167,7 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
      * 모든 bsModal 창 닫기
      */
     closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -183,7 +183,7 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
                 .pipe(take(1))
                 .subscribe(
                     (status: any) => {
-                        if (status === 'END') {
+                        if (status === 'STOP') {
                             this.rxAlive = false;
                             console.info('[status]', status);
                             console.info('[rxAlive]', this.rxAlive);
@@ -196,23 +196,15 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
                 )
         );
     }
-    /**
-    * 옵저버블 초기화
-    */
-    observableInit() {
-        this.hotelListRes$ = this.store.pipe(
-            select(getSelectId(['hotel-search-result']))
-        );
-
-    }
 
     /**
      * 서브스크라이브 초기화
      */
     // subscribeInit() {
     //     this.subscriptionList.push(
-    //         this.hotelListRes$
-    //             .pipe(takeWhile(val => this.rxAlive))
+    //         this.store.pipe(
+    // select(getSelectId(['hotel-search-result']))
+    // )
     //             .subscribe(
     //                 (ev: any) => {
     //                     console.info('[hotelListRes$ > subscribe]', ev);
@@ -325,11 +317,11 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
                     console.info('[end api 호출]');
                     return res;
                 } else {
-                    this.alertService.showApiAlert(res.errorMessage);
+                    // this.alertService.showApiAlert(res.errorMessage);
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                //this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -354,7 +346,7 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
 
     }
@@ -380,12 +372,14 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
             step: {
                 title: $headerTitle,
                 changeBtnFun: this.onChangeBtnClick,
+                backBtnUrl: 'hotel-main'
             },
             detail: $headerTime,
             backList: ['hotel-main'],
             ctx: this.ctx
         };
     }
+
     /**
      * vm 스토어에 저장
      */
@@ -417,6 +411,7 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
         this.store.dispatch(clearHotelModalTravelerOptions());
         this.store.dispatch(clearHotelModalDetailOptions());
     }
+
     onChangeBtnClick($ctx) {
         console.info('onChangeBtnClick', $ctx);
 
@@ -431,14 +426,8 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
                 itemCategoryCode: itemCategoryCode
             };
 
-            // ngx-bootstrap config
-            const configInfo = {
-                class: 'm-ngx-bootstrap-modal',
-                animated: false
-            };
-
             console.info('[initialState]', initialState);
-            $ctx.bsModalChangeRef = $ctx.bsModalService.show(HotelModalResearchComponent, { ...configInfo });
+            $ctx.bsModalChangeRef = $ctx.bsModalService.show(HotelModalResearchComponent, { ...ConfigInfo });
         }
     }
 
@@ -490,23 +479,15 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
 
     onDetailFilter() {
         if (this.isSearchDone) {
-            const configInfo = {
-                class: 'm-ngx-bootstrap-modal',
-                animated: false
-            };
 
-            this.bsModalDetailRef = this.bsModalService.show(HotelModalDetailFilterComponent, { ...configInfo });
+            this.bsModalDetailRef = this.bsModalService.show(HotelModalDetailFilterComponent, { ...ConfigInfo });
         }
     }
 
     onAlignFilter() {
         if (this.isSearchDone) {
-            const configInfo = {
-                class: 'm-ngx-bootstrap-modal',
-                animated: false
-            };
 
-            this.bsModalAlignRef = this.bsModalService.show(HotelModalAlignFilterComponent, { ...configInfo });
+            this.bsModalAlignRef = this.bsModalService.show(HotelModalAlignFilterComponent, { ...ConfigInfo });
         }
     }
 
@@ -520,12 +501,7 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
                 geography: this.vm.result.geography
             };
 
-            const configInfo = {
-                class: 'm-ngx-bootstrap-modal',
-                animated: false
-            };
-
-            this.bsModalMapRef = this.bsModalService.show(HotelModalMapFilterComponent, { initialState, ...configInfo });
+            this.bsModalMapRef = this.bsModalService.show(HotelModalMapFilterComponent, { initialState, ...ConfigInfo });
         }
     }
 
@@ -553,77 +529,14 @@ export class HotelSearchResultPageComponent extends BasePageComponent implements
     /**
      * ErrorResultComponent output 이벤트
      * 에러 발생 > 다시 검색 버튼 클릭 >  메인 이동
+     * 헤더 > 뒤로가기 버튼 클릭 > 메인 이동 (검색결과 화면에서 뒤로가기 버튼 클릭 시, 다시 검색 버튼과 같은 이벤트)
+     *
      * 1. 검색 폼 디폴트 데이터 세팅
      * 2. 각 카테고리 메인으로 이동
      * @param e
      */
     errorSearchAgain(e: any) {
         const path = e;
-        // 1. 검색 폼 디폴트 값 데이터 세팅
-
-        /**
-         * 호텔 결과 페이지 Request Data Model
-         * environment.STATION_CODE
-         */
-        const rqInfo = {
-            city: this.routeData.city,
-            cityGubun: this.routeData.cityGubun,
-            cityName: this.routeData.cityName,
-            chkIn: this.routeData.chkIn,
-            chkOut: this.routeData.chkOut,
-            roomList: this.routeData.roomList
-        };
-
-        if (_.has(this.researchRq.condition, 'filter')) {
-            const filter: any = this.researchRq.condition.filter;
-            const detailObj: any = {};
-            let price: any;
-            let review: any;
-            let star: any;
-            if (_.has(filter, 'amount'))
-                price = [filter.amount.lowestAmount, filter.amount.highestAmount];
-
-            if (_.has(filter, 'reviewRatings'))
-                review = [filter.reviewRatings.lowestRating, filter.reviewRatings.highestRating];
-
-            if (_.has(filter, 'starRatings'))
-                star = filter.starRatings;
-
-            if (!_.isEmpty(price))
-                detailObj['price'] = price;
-
-            if (!_.isEmpty(review))
-                detailObj['review'] = review;
-
-            if (!_.isEmpty(star))
-                detailObj['star'] = star;
-
-            rqInfo['detail'] = detailObj;
-        }
-
-        console.info('againSearch > rqInfo', rqInfo);
-        // 2. 각 카테고리 메인으로 이동
-        const obj = {
-            id: 'hotel-search-again',
-            search: rqInfo
-        };
-
-        this.store.dispatch(upsertHotelMainSearch({
-            hotelMainSearch: obj
-        }));
-
-        this.router.navigate([path]);
-
-    }
-
-    makeObjStr(obj) {
-        const list = [];
-        _.forEach(obj, (v1) => {
-            list.push(v1);
-        });
-
-        const returnStr = _.join(list, '@');
-        console.info('makeObjStr', returnStr);
-        return returnStr;
+        this.backBtnS.goHotelMainSearch(path, this.routeData, this.researchRq);
     }
 }

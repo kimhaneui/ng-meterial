@@ -38,7 +38,6 @@ export class MyRecentListPageComponent extends BasePageComponent implements OnIn
         super.ngOnInit();
         this.headerInit();
         this.selectTab(0);
-        // this.aaa();
     }
 
     ngOnDestroy() {
@@ -47,17 +46,11 @@ export class MyRecentListPageComponent extends BasePageComponent implements OnIn
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
 
-    aaa() {
-        const futureMonth = moment().add(3, 'months');
-        const pastMonth = moment().subtract(3, 'months');
-        console.log('futureMonth >>>', futureMonth.format('YYYY-MM-DD'));
-        console.log('pastMonth >>>', pastMonth.format('YYYY.MM.DD (ddd)'));
-    }
 
     hisBack() {
         history.back();

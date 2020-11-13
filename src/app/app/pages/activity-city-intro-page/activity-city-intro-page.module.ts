@@ -8,6 +8,9 @@ import { StoreModule } from '@ngrx/store';
 
 import { CommonSourceModule } from '../../common-source/common-source.module';
 
+// ngx-bootstrap
+import { ModalModule } from 'ngx-bootstrap/modal';
+
 import { JwtService } from '../../common-source/services/jwt/jwt.service';
 
 // store
@@ -30,10 +33,8 @@ import { ActivityCityListComponent } from './components/activity-city-list/activ
 import { ActivityCityFreestyleComponent } from './components/activity-city-freestyle/activity-city-freestyle.component';
 import { ActivityCityTravelPlanComponent } from './components/activity-city-travel-plan/activity-city-travel-plan.component';
 import { ActivityCityHotplaceComponent } from './components/activity-city-hotplace/activity-city-hotplace.component';
-
-// ngx-bootstrap
-import { ModalModule } from 'ngx-bootstrap/modal';
 import { ActivityModalCityInformationComponent } from './modal-components/activity-modal-city-information/activity-modal-city-information.component';
+
 
 /**
  * 필수 디렉티브

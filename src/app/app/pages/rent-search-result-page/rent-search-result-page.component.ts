@@ -25,8 +25,11 @@ import { SeoCanonicalService } from '../../common-source/services/seo-canonical/
 import { RentUtilService } from '../../common-source/services/rent-com-service/rent-util.service';
 import { StorageService } from '@app/common-source/services/storage/storage.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
+import { BackBtnService } from '@/app/common-source/services/back-btn-service/back-btn.service';
 
 import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
@@ -92,7 +95,8 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
         private loadingBar: LoadingBarService,
         private countdownTimerService: CountdownTimerService,
         private storageS: StorageService,
-        private alertService: ApiAlertService
+        private alertService: ApiAlertService,
+        private backBtnS: BackBtnService
     ) {
         super(
             platformId,
@@ -202,7 +206,7 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
                 .pipe(take(1))
                 .subscribe(
                     (status: any) => {
-                        if (status === 'END') {
+                        if (status === 'STOP') {
                             this.rxAlive = false;
                             console.info('[status]', status);
                             console.info('[rxAlive]', this.rxAlive);
@@ -299,11 +303,11 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
                     console.info('[렌터카 리스트 > res]', res['result']);
                     return res;
                 } else {
-                    this.alertService.showApiAlert(res.errorMessage);
+                    // this.alertService.showApiAlert(res.errorMessage);
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                //this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -328,7 +332,8 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
             icon: $iconType,
             step: {
                 title: $headerTitle,
-                changeBtnFun: this.onChangeBtnClick
+                changeBtnFun: this.onChangeBtnClick,
+                backBtnUrl: 'rent-main'
             },
             detail: $headerTime,
             ctx: this.ctx
@@ -374,19 +379,15 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     /**
      * 모든 bsModal 창 닫기
      */
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -398,6 +399,9 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
     onChangeBtnClick($ctx) {
         console.info('onChangeBtnClick', $ctx);
 
+        console.log(this.resolveData, 'this.resolveData');
+        console.log(this.resData, 'this.resData');
+
         if ($ctx.isSearchDone) {
             const itemCategoryCode = 'IC03';
             const storeId = '';
@@ -406,17 +410,12 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
             const initialState = {
                 storeId: storeId,
                 itemCategoryCode: itemCategoryCode,
-                stationTypeCode: environment.STATION_CODE
-            };
+                stationTypeCode: environment.STATION_CODE,
 
-            // ngx-bootstrap config
-            const configInfo = {
-                class: 'm-ngx-bootstrap-modal',
-                animated: false
             };
 
             console.info('[initialState]', initialState);
-            $ctx.bsModalChangeRef = $ctx.bsModalService.show(RentModalResearchComponent, { initialState, ...configInfo });
+            $ctx.bsModalChangeRef = $ctx.bsModalService.show(RentModalResearchComponent, { initialState, ...ConfigInfo });
         }
 
     }
@@ -434,13 +433,6 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
             itemCategoryCode: itemCategoryCode
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-
         console.info('[initialState]', initialState);
         this.resData = _.cloneDeep(this.resData);
         this.resData.isListType = this.isListType;
@@ -449,7 +441,7 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
             res: this.resData
         });
 
-        this.bsModalFilterRef = this.bsModalService.show(RentModalDetailFilterComponent, { initialState, ...configInfo });
+        this.bsModalFilterRef = this.bsModalService.show(RentModalDetailFilterComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -466,13 +458,6 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
 
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-
         console.info('[initialState]', initialState);
         this.resData = _.cloneDeep(this.resData);
         this.resData.isListType = this.isListType;
@@ -481,7 +466,7 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
             res: this.resData
         });
 
-        this.bsModalAlignRef = this.bsModalService.show(RentModalAlignFilterComponent, { initialState, ...configInfo });
+        this.bsModalAlignRef = this.bsModalService.show(RentModalAlignFilterComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -508,6 +493,7 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
                 vehicleIndex: $vehicleItem.vehicleIndex,
                 accessLevel: $vehicleItem.accessLevel,
                 vehicleVendorCode: $vehicleItem.vehicleVendorCode,
+                vendorCompCode: Number($vehicleItem.vendorCompCode),
                 sippCode: $vehicleItem.sippCode,
                 vendorCurrencyCode: $vehicleItem.vendorCurrencyCode,
                 baseRateTypeCode: $vehicleItem.baseRateTypeCode,
@@ -515,7 +501,7 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
                 rateIdentifier: $vehicleItem.rateIdentifier,
                 rateCategoryCode: $vehicleItem.rateCategoryCode,
                 fareTypeCode: $vehicleItem.fareTypeCode,
-                vehicleTypeOwner: $vehicleItem.vehicleTypeOwner
+                vehicleTypeOwner: $vehicleItem.vehicleTypeOwner,
             }
 
         };
@@ -537,7 +523,8 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
                 sortOrder: resolveDataRqCondition.sortOrder,
                 filter: {
                     vehicleIndex: $vehicleItem.vehicleIndex
-                }
+                },
+                insurance: resolveDataRqCondition.insurance || undefined,
             },
             transactionSetId: this.transactionSetId,
         };
@@ -602,18 +589,9 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
     errorSearchAgain(e) {
         console.info(e);
         const path = e;
-        const obj: any = {
-            id: 'rent-search-again',
-            search: _.omit(this.resolveData, 'rq')
-        };
-
-        this.store.dispatch(upsertRentMainSearch({
-            rentMainSearch: obj
-        }));
-
-        this.router.navigate([path]);
-
+        this.backBtnS.goRentMainSearch(path, this.resolveData);
     }
+
     /**
      * imgLoadError
      * 이미지 로드 에러 시 이미지 변경
@@ -642,12 +620,7 @@ export class RentSearchResultPageComponent extends BasePageComponent implements 
         };
         console.log(initialState, 'initialState');
 
-        // ngx-bootstrap configlongitude
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(RentModalBranchofficeComponent, { initialState, ...configInfo });
+        this.bsModalService.show(RentModalBranchofficeComponent, { initialState, ...ConfigInfo });
     }
 
 }

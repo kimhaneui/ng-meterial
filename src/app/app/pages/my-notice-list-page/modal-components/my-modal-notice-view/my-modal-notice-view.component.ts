@@ -78,7 +78,7 @@ export class MyModalNoticeViewComponent extends BaseChildComponent implements On
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 

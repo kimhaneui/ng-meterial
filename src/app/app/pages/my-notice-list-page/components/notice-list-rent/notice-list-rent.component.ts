@@ -1,6 +1,5 @@
 import { Component, OnInit, Input, OnDestroy, PLATFORM_ID, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Observable } from 'rxjs';
 
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 
@@ -10,6 +9,8 @@ import { ApiMypageService } from 'src/app/api/mypage/api-mypage.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
 
 import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { CommonModalAlertComponent } from 'src/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
 import { MyModalNoticeViewComponent } from '../../modal-components/my-modal-notice-view/my-modal-notice-view.component';
@@ -36,7 +37,6 @@ export class NoticeListRentComponent extends BaseChildComponent implements OnIni
     limitStart = 0;
     limitEnd = 10;
     pageCount = 10;
-    resolveData$: Observable<any>;
     selTab: any;
     infiniteScrollConfig: any = {
         distance: 0,
@@ -82,7 +82,7 @@ export class NoticeListRentComponent extends BaseChildComponent implements OnIni
     }
 
     // API 호출 전체 예약리스트
-    async callNoticeListApi(cate) {
+    async callNoticeListApi() {
         const $rq = {
             'stationTypeCode': environment.STATION_CODE,
             'currency': 'KRW',
@@ -126,7 +126,7 @@ export class NoticeListRentComponent extends BaseChildComponent implements OnIni
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -140,7 +140,7 @@ export class NoticeListRentComponent extends BaseChildComponent implements OnIni
             alert('마지막 데이터입니다.');
             return false;                                                   // api결과 갯수가 pageCount보다 작으면 마지막 data로 봄
         }
-        this.result = await this.callNoticeListApi(null);
+        this.result = await this.callNoticeListApi();
         console.info('this.result>>>>>', this.result);
 
         const tmpCateResult = await this.result.result.list;      // api에서 limit갯수로 받아온 리스트
@@ -152,7 +152,7 @@ export class NoticeListRentComponent extends BaseChildComponent implements OnIni
         console.info('noticeList>>>>>', this.noticeList);
     }
 
-    selectDetail($event) {
+    selectDetail() {
         (<HTMLInputElement>event.target).closest('.btn-detail-view').classList.toggle('active');
     }
 
@@ -203,11 +203,7 @@ export class NoticeListRentComponent extends BaseChildComponent implements OnIni
             list: [],
             title: 'notice detail'
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalNoticeViewComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalNoticeViewComponent, { initialState, ...ConfigInfo });
     }
 
     onAlertClick() {
@@ -230,11 +226,7 @@ export class NoticeListRentComponent extends BaseChildComponent implements OnIni
             //   fun: null
             // }
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
 }

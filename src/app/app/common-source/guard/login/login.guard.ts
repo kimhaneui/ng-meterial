@@ -62,7 +62,7 @@ export class LoginGuard implements CanActivate {
                         }
                     })
                     .catch((err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     });
 
                 console.info('[travelerRes]', travelerRes);

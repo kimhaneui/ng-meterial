@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { Subscription, combineLatest } from 'rxjs';
 
-import { Store, select } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { getSelectId } from '@/app/store/activity-city-intro-page/activity-city-search/activity-city-search.selectors';
 
@@ -11,11 +11,11 @@ import * as moment from 'moment';
 import * as _ from 'lodash';
 
 import { ViewModel, ViewModelSet, ViewModelCurrencySet, ViewModeltimeSet, ViewModelPlugSet, ViewModelWeatherSet } from './models/activity-modal-city-information.model';
+import { ViewModelWeather } from '../../components/activity-city-search/models/activity-city-search.model';
 
 import { ActivityStore } from '@/app/common-source/enums/activity/activity-store.enum';
 
 import { BaseChildComponent } from '../../../../pages/base-page/components/base-child/base-child.component';
-import { ViewModelWeather } from '../../components/activity-city-search/models/activity-city-search.model';
 
 @Component({
     selector: 'app-activity-modal-city-information',
@@ -24,7 +24,6 @@ import { ViewModelWeather } from '../../components/activity-city-search/models/a
 })
 export class ActivityModalCityInformationComponent extends BaseChildComponent implements OnInit, OnDestroy {
     private dataModel: any;
-    private observableList: any;
     private subscriptionList: Subscription[];
 
     public viewModel: ViewModel;
@@ -68,25 +67,8 @@ export class ActivityModalCityInformationComponent extends BaseChildComponent im
             response: {},
             transactionSetId: null,
         };
-        this.observableList = {};
         this.subscriptionList = [];
-        this.observableInit();
         this.subscribeInit();
-    }
-
-    /**
-     * observableInit
-     * 감시 초기화
-     */
-    private observableInit(): void {
-        this.observableList = {
-            activityCityRq$: this.store.pipe(
-                select(getSelectId([ActivityStore.STORE_CITYINTRO_RQ]))
-            ),
-            activiTyCityRs$: this.store.pipe(
-                select(getSelectId(ActivityStore.STORE_CITYINTRO_RS))
-            )
-        };
     }
 
     /**
@@ -96,8 +78,10 @@ export class ActivityModalCityInformationComponent extends BaseChildComponent im
     private subscribeInit(): void {
         this.subscriptionList.push(
             combineLatest(
-                this.observableList.activityCityRq$,
-                this.observableList.activiTyCityRs$
+                this.store
+                    .select(getSelectId([ActivityStore.STORE_CITYINTRO_RQ])),
+                this.store
+                    .select(getSelectId(ActivityStore.STORE_CITYINTRO_RS))
             )
                 .subscribe(
                     ([res1, res2]) => {

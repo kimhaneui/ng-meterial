@@ -1,10 +1,10 @@
-import { Component, OnInit, Inject, PLATFORM_ID, ViewChild, OnDestroy } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { Title, Meta } from '@angular/platform-browser';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
-import { Store, select } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertCommonUserInfo, deleteCommonUserInfo } from 'src/app/store/common/common-user-info/common-user-info.actions';
 
@@ -25,7 +25,6 @@ import { environment } from '@/environments/environment';
 
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
-import { AllReservationListComponent } from './components/all-reservation-list/all-reservation-list.component';
 import { BasePageComponent } from '../base-page/base-page.component';
 
 @Component({
@@ -45,14 +44,7 @@ export class MyReservationListPageComponent extends BasePageComponent implements
     resolveData: any;
     selectCode = 0;
     userInfo: any = {};
-    commonUserInfo$: any;
-    // infiniteScrollConfig: any = {
-    //   distance: 1,
-    //   throttle: 150
-    // };
     private subscriptionList: Subscription[];
-
-    @ViewChild(AllReservationListComponent) allReserCom: AllReservationListComponent;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
@@ -117,20 +109,15 @@ export class MyReservationListPageComponent extends BasePageComponent implements
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
 
-    observableInit() {
-        this.commonUserInfo$ = this.store.pipe(
-            select(commonUserInfoSelectors.getSelectId(['commonUserInfo']))
-        );
-    }
     subscribeInit() {
         this.subscriptionList.push(
-            this.commonUserInfo$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(commonUserInfoSelectors.getSelectId(['commonUserInfo']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[userInfo]', ev);
@@ -182,7 +169,7 @@ export class MyReservationListPageComponent extends BasePageComponent implements
                         }
                     })
                     .catch((err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     });
 
                 console.info('[travelerRes]', travelerRes);

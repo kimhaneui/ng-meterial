@@ -84,6 +84,9 @@
                                     <dt>주의사항</dt>
                                     <dd [innerHTML]="viewModel.cautionDetail"></dd>
                                 </dl>
+                                <dl *ngIf="item.id === 'info' && item.more">
+                                    <dd [innerHTML]="viewModel.includedDetail"></dd>
+                                </dl>
                                 <dl *ngIf="item.id === 'use'">
                                     <dd [innerHTML]="viewModel.howToUse"></dd>
                                 </dl>
@@ -91,9 +94,70 @@
                                     <dd [innerHTML]="viewModel.othersDescDetail"></dd>
                                 </dl>
                             </div>
+
+                            <a *ngIf="!item.more" (click)="moreInfo($event, item)" class="btn-more-view">더보기</a>
                         </div>
                     </div>
+
+                    <div *ngIf="item.id === 'itinerary'" class="contents-item">
+                        <h2 class="contents-title">상세 일정</h2>
+                        <div class="round-box">
+                            <div class="activity-schedule-accordion">
+
+                                <ng-container *ngFor="let item of viewModel.itineraries; index as index;">
+                                    <div (click)="selecItineraries($event, index)" class="accordion2">
+                                        <a [class.active]="item.active" class="accordion-title">{{ item.itineraryTitle }}</a>
+                                        <div [innerHTML]="item.itineraryDetail" class="accordion-body"></div>
+                                    </div>
+                                </ng-container>
+
+                            </div>
+                        </div>
+                    </div>
+
                 </ng-container>
+
+                <div *ngIf="viewModel.provider" class="contents-item">
+                    <h2 class="contents-title">업체정보</h2>
+                    <div class="round-box">
+                        <div class="activity-seller-info">
+                            <strong>{{ viewModel.provider.name }}</strong>
+                            <span class="logo">
+                                <img [attr.src]="viewModel.provider.photoUrl" [attr.alt]="viewModel.provider.name" (error)="imageError($event)">
+                            </span>
+                        </div>
+                        <div class="activity-seller-info-summary">
+                            <dl>
+                                <dt>업체정보</dt>
+                                <dd>{{ viewModel.provider.intro }}</dd>
+                            </dl>
+                            <dl *ngIf="false">
+                                <dt>대표자명</dt>
+                                <dd>고재경, 최명일</dd>
+                            </dl>
+                            <dl *ngIf="false">
+                                <dt>주소</dt>
+                                <dd>서울특별시 중구 중구로 중구가 시키드나</dd>
+                            </dl>
+                            <dl *ngIf="false">
+                                <dt>대표 전화</dt>
+                                <dd>1544-2288</dd>
+                            </dl>
+                            <dl *ngIf="false">
+                                <dt>대표 이메일</dt>
+                                <dd>ybtour@ybtour.co.kr</dd>
+                            </dl>
+                            <dl *ngIf="false">
+                                <dt>사업자등록번호</dt>
+                                <dd>104-81-64440</dd>
+                            </dl>
+                            <dl *ngIf="false">
+                                <dt>통신판매신고번호</dt>
+                                <dd>제2008-서울중구-0278</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
 
                 <div *ngIf="false" class="contents-item">
                     <h2 class="contents-title">여행 후기</h2>

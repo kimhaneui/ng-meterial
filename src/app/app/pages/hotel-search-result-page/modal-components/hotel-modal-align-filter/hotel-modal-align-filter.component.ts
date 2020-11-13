@@ -1,10 +1,9 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import * as hotelSearchResultPageSelectors from 'src/app/store/hotel-search-result-page/hotel-search-result/hotel-search-result.selectors';
 
@@ -78,8 +77,6 @@ export class HotelModalAlignFilterComponent extends BaseChildComponent implement
     };
 
     rxAlive: boolean = true;
-    hotelListRq$: Observable<any>; // 호텔 검색 request
-    hotelListRs$: Observable<any>; // 호텔 검색 결과
 
     loadingBool: boolean = false;
 
@@ -106,7 +103,6 @@ export class HotelModalAlignFilterComponent extends BaseChildComponent implement
         bodyEl.classList.add('overflow-none');
 
         this.mainFormCreate();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -121,17 +117,10 @@ export class HotelModalAlignFilterComponent extends BaseChildComponent implement
         );
     }
 
-    observableInit() {
-        this.hotelListRq$ = this.store
-            .pipe(select(hotelSearchResultPageSelectors.getSelectId('hotel-list-rq-info')));
-        this.hotelListRs$ = this.store
-            .pipe(select(hotelSearchResultPageSelectors.getSelectId('hotel-search-result')));
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.hotelListRq$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelSearchResultPageSelectors.getSelectId('hotel-list-rq-info'))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelListRq$ > subscribe]', ev);
@@ -146,17 +135,15 @@ export class HotelModalAlignFilterComponent extends BaseChildComponent implement
         );
 
         this.subscriptionList.push(
-            this.hotelListRs$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelSearchResultPageSelectors.getSelectId('hotel-search-result'))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelListRs$ > subscribe]', ev);
                         if (ev) {
                             this.hotelTransactionSetId = _.cloneDeep(ev.res.transactionSetId);
                             this.setAlign(ev.res.result);
-
                             this.loadingBool = true;
-
                         } else {
                             this.loadingBool = false;
                         }
@@ -190,7 +177,9 @@ export class HotelModalAlignFilterComponent extends BaseChildComponent implement
         this.bsModalRef.hide();
     }
 
-    onCloseClick(e) {
+    onCloseClick(event: MouseEvent) {
+        event && event.preventDefault();
+
         console.info('모달 닫기');
         this.modalClose();
     }
@@ -216,9 +205,6 @@ export class HotelModalAlignFilterComponent extends BaseChildComponent implement
 
         const qsStr = qs.stringify(rq);
         const path = '/hotel-search-result/' + qsStr;
-        const extras = {
-            relativeTo: this.route
-        };
         // 페이지 이동후 생명주기 재실행
         this.router.navigateByUrl('/', { skipLocationChange: true })
             .then(() => this.router.navigate([path]));

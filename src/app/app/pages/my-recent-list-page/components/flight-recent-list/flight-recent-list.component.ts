@@ -50,12 +50,13 @@ export class FlightRecentListComponent extends BaseChildComponent implements OnI
                         if (_.has(item, 'rq')) {
                             const newItem = {
                                 index: key,
-                                bookingName: '',
+                                bookingName: this.bookingName(item),
                                 travelers: (item.vm.travelerStore.cabinClassTxt),
                                 cabinClass: (item.vm.travelerStore.cabinClassNm),
                                 tripType: item.vm.trip.tripTypeCode,
                                 dateRange: item.vm.trip.destination[0].dateRange,
-                                trip: item.vm.trip
+                                trip: item.vm.trip,
+                                destination: item.destination
                             };
 
                             item.vm.trip.destination.map(
@@ -93,6 +94,7 @@ export class FlightRecentListComponent extends BaseChildComponent implements OnI
                                                     `${subItem.origin.val} ${subItem.origin.name}`,
                                                     { className: 'icon sm departure' },
                                                 ];
+
                                             } else if (subIndex === (item.vm.trip.destination.length - 1)) {
                                                 newItem.dateRange += `${moment(subItem.date, 'YYYY-MM-DD').format('MM.DD (ddd)')}`;
                                                 newItem.trip.push(
@@ -107,6 +109,8 @@ export class FlightRecentListComponent extends BaseChildComponent implements OnI
                                                 );
                                             }
                                             break;
+
+
                                     }
                                 }
                             );
@@ -127,6 +131,21 @@ export class FlightRecentListComponent extends BaseChildComponent implements OnI
         }
 
     }
+
+    private bookingName(item) {
+
+        if (item.vm.trip.destination.length === 4) {
+            return `${item.vm.trip.destination[0].origin.name} - ${item.vm.trip.destination[1].origin.name} - ${item.vm.trip.destination[2].origin.name} - ${item.vm.trip.destination[3].origin.name}`;
+        } else if (item.vm.trip.destination.length === 3) {
+            return `${item.vm.trip.destination[0].origin.name} - ${item.vm.trip.destination[1].origin.name} - ${item.vm.trip.destination[2].origin.name}`;
+        } else if (item.vm.trip.destination.length === 2) {
+            return `${item.vm.trip.destination[0].origin.name} - ${item.vm.trip.destination[1].origin.name}`;
+        }
+        else if (item.vm.trip.destination.length === 1) {
+            return `${item.vm.trip.destination[0].dest.name}`;
+        }
+    }
+
     private parseTraveler(item: any): string {
         let returnText = '';
 

@@ -93,7 +93,7 @@ export class ActivityBasketListComponent extends BaseChildComponent implements O
                 }
             })
             .catch((err: any) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 

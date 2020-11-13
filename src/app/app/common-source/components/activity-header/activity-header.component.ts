@@ -1,10 +1,10 @@
 import { Component, Inject, Input, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertCommonLayout } from '../../../store/common/common-layout/common-layout.actions';
 
@@ -39,8 +39,6 @@ export class ActivityHeaderComponent extends BaseChildComponent implements OnIni
         sideMenuBool: false
     };
 
-    vm$: Observable<any>;
-
     private subscriptionList: Subscription[];
 
     constructor(
@@ -61,7 +59,6 @@ export class ActivityHeaderComponent extends BaseChildComponent implements OnIni
     ngOnInit() {
         super.ngOnInit();
         this.headerTitleInit();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -91,20 +88,12 @@ export class ActivityHeaderComponent extends BaseChildComponent implements OnIni
     }
 
     /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.vm$ = this.store
-            .pipe(select(commonLayoutSelectors.selectComponentStateVm));
-    }
-
-    /**
      * 서브스크라이브 초기화
      */
     subscribeInit() {
         this.subscriptionList.push(
-            this.vm$
-                .pipe(takeWhile(() => this.alive))
+            this.store
+                .select(commonLayoutSelectors.selectComponentStateVm)
                 .subscribe(
                     (ev) => {
                         if (ev) {
@@ -131,9 +120,9 @@ export class ActivityHeaderComponent extends BaseChildComponent implements OnIni
     }
 
     upsertOne($obj) {
-        this.store.dispatch(upsertCommonLayout({
-            commonLayout: $obj
-        }));
+        this.store.dispatch(
+            upsertCommonLayout({ commonLayout: $obj })
+        );
     }
 
     /**

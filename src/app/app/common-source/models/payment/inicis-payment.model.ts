@@ -3,6 +3,7 @@ import { environment } from '@/environments/environment';
 import { Booker, Travelers } from './booker.model';
 
 import { InicisPaymentCode, InicisPaymentCommon } from '../../enums/payment/inicis-payment.enum';
+import { InicisPaymentSecondPayment } from '../common/condition.model';
 
 export interface InicisPayment {
     // 주불 수단
@@ -219,20 +220,6 @@ export const InicisPayTypeList: InicisPayType[] = [
     { code: 'd_kakaopay=Y', name: '카카오페이', active: false },
     // { code: '', name: '네이버페이' },
 ];
-
-
-export interface EasyPay {
-    amount: number;
-    // base64로 변환
-    encodeData: string;
-}
-
-export interface InicisPaymentSecondPayment {
-    coupons: Array<any>;
-    point: number;
-    cards: Array<any>;
-    easyPay: EasyPay;
-}
 
 export interface InicisPaymentSecond {
     // 선결제로 예약을 진행했을경우에는 반드시 입력해줘야한다.

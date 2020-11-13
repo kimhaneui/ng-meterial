@@ -60,7 +60,7 @@ export class RentMainPageComponent extends BasePageComponent implements OnInit, 
      * 모든 bsModal 창 닫기
      */
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }

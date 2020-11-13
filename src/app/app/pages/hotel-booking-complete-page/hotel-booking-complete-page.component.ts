@@ -2,7 +2,7 @@ import { Component, Inject, OnInit, PLATFORM_ID, ViewEncapsulation, OnDestroy } 
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { mergeMap } from 'rxjs/operators';
+import { concatMap } from 'rxjs/operators';
 
 import { Store } from '@ngrx/store';
 
@@ -26,7 +26,7 @@ import { InicisCallBack } from '@/app/common-source/models/payment/inicis-paymen
 
 import { UserStore } from '@/app/common-source/enums/common/user-store.enum';
 import { HotelStore } from '@/app/common-source/enums/hotel/hotel-store.enum';
-import { CondisionSet, Condition } from '@/app/common-source/models/common/condition.model';
+import { RequestSet, Condition, RequestParam } from '@/app/common-source/models/common/condition.model';
 
 //component
 import { BasePageComponent } from '../base-page/base-page.component';
@@ -131,7 +131,7 @@ export class HotelBookingCompletePageComponent extends BasePageComponent impleme
         this.subscribeList.push(
             this.route.queryParams
                 .pipe(
-                    mergeMap(
+                    concatMap(
                         (params: InicisCallBack) => {
                             console.log('rrrroute queryParams : ', params);
                             try {
@@ -146,7 +146,7 @@ export class HotelBookingCompletePageComponent extends BasePageComponent impleme
                                 }
                             } catch (err) {
                                 console.log(err);
-                                this.alertService.showApiAlert(err);
+                                this.alertService.showApiAlert(err.error.message);
                             }
                         }
                     )
@@ -162,12 +162,12 @@ export class HotelBookingCompletePageComponent extends BasePageComponent impleme
                                 this.alertService.showApiAlert(res.errorMessage);
                             }
                         } catch (err) {
-                            this.alertService.showApiAlert(err);
+                            this.alertService.showApiAlert(err.error.message);
                         }
                     },
                     err => {
                         console.log(err);
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -175,7 +175,7 @@ export class HotelBookingCompletePageComponent extends BasePageComponent impleme
 
     private makeBookingData() {
         console.log('하하하하하 : ', this.dataModel);
-        this.dataModel.bookingRq = CondisionSet;
+        this.dataModel.bookingRq = _.cloneDeep(RequestSet);
         this.dataModel.bookingRq.transactionSetId = this.dataModel.beforeBookingRq.transactionSetId;
         this.dataModel.bookingRq.condition = this.dataModel.beforeBookingRq.condition;
         this.dataModel.bookingRq.condition.domainAddress = window.location.hostname;
@@ -218,7 +218,7 @@ export class HotelBookingCompletePageComponent extends BasePageComponent impleme
     public myBookingListLink(event: MouseEvent) {
         event && event.preventDefault();
 
-        const rq: Condition = CondisionSet;
+        const rq: RequestParam = _.cloneDeep(RequestSet);
         rq.condition = { userNo: this.dataModel.user.userNo };
         const path = MyCommon.PAGE_RESERVATION_LIST + qs.stringify(rq);
         this.router.navigate([path]);
@@ -227,8 +227,8 @@ export class HotelBookingCompletePageComponent extends BasePageComponent impleme
     public myBookingDetailLink(event: MouseEvent) {
         event && event.preventDefault();
 
-        const rq: Condition = CondisionSet;
-        rq.condition = { userNo: this.viewModel.bookingItemCode };
+        const rq: RequestParam = _.cloneDeep(RequestSet);
+        rq.condition = { userNo: this.dataModel.user.userNo, bookingItemCode: this.viewModel.bookingItemCode };
         const path = MyCommon.PAGE_RESERVATION_HOTEL_DETAIL + qs.stringify(rq);
         this.router.navigate([path]);
     }

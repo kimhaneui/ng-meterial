@@ -109,15 +109,11 @@ export class TravelConvenienceMainComponent extends BaseChildComponent implement
             window.open(url);
         }
         // ngx-bootstrap config
-        // const configInfo = {
-        //     class: 'm-ngx-bootstrap-modal',
-        //     animated: false
-        // };
         // const initialState = {
 
         // };
 
-        // this.bsModalService.show(TravelConvenienceSellerComponent, { initialState, ...configInfo });
+        // this.bsModalService.show(TravelConvenienceSellerComponent, { initialState, ...ConfigInfo });
     }
 
 }

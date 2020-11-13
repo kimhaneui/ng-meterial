@@ -1,8 +1,8 @@
 import { Component, Inject, OnInit, PLATFORM_ID, ViewChild, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile, debounceTime } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 
@@ -53,7 +53,6 @@ export class HotelModalMapFilterComponent extends BaseChildComponent implements 
 
     rxAlive: boolean = true;
     loadingBool: boolean = false;
-    hotelListRq$: Observable<any>;
 
     private subscriptionList: Subscription[];
 
@@ -103,10 +102,8 @@ export class HotelModalMapFilterComponent extends BaseChildComponent implements 
     subscribeInit() {
         console.info('[map filter >> subscribeInit]');
         this.subscriptionList = [
-            this.store.select(
-                hotelSearchResultSelector.getSelectId(['hotel-list-rq-info'])
-            )
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelSearchResultSelector.getSelectId(['hotel-list-rq-info']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelListRq$ > subscribe]', ev.res);
@@ -148,7 +145,7 @@ export class HotelModalMapFilterComponent extends BaseChildComponent implements 
                     },
                     (err: any) => {
                         // 하림대리가 알아서 하겠지
-                        // this.alertService.showApiAlert(err);
+                        // this.alertService.showApiAlert(err.error.message);
                         console.info('[err]', err);
                         if (this.rxAlive) {
                             const error = err.error;
@@ -290,10 +287,7 @@ export class HotelModalMapFilterComponent extends BaseChildComponent implements 
         });
         this.subscriptionList.push(
             this.agmMap.boundsChange
-                .pipe(
-                    takeWhile(() => this.rxAlive),
-                    debounceTime(300)
-                )
+                .pipe(debounceTime(300))
                 .subscribe(
                     (LatLngBound: LatLngBounds) => {
                         console.info('bounds', LatLngBound);

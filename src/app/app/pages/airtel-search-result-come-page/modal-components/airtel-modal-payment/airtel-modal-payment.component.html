@@ -73,22 +73,20 @@
                 </div>
                 <div class="contents-item">
                     <div class="item-group">
-                        <ng-container *ngIf="flightListRs$ | async as list">
-                            <ng-container *ngFor="let item of list.option.result.selected.flights">
-                                <ng-container *ngFor="let item1 of item.price.fares[0].passengerFares; index as i">
-                                    <div class="item-row col" *ngIf="item.ageTypeCode ==='ADT'">
-                                        <div class="left">성인 * {{item1.paxCount}}인</div>
-                                        <div class="right">{{item1.amountSum | number}}원</div>
-                                    </div>
-                                    <div class="item-row col" *ngIf="item1.ageTypeCode ==='CHD'">
-                                        <div class="left">아동 * {{item1.paxCount}}인</div>
-                                        <div class="right">{{item1.amountSum | number}}원</div>
-                                    </div>
-                                    <div class="item-row col" *ngIf="item1.ageTypeCode ==='INF'">
-                                        <div class="left">유아 * {{item1.paxCount}}인</div>
-                                        <div class="right">{{item1.amountSum | number}}원</div>
-                                    </div>
-                                </ng-container>
+                        <ng-container *ngFor="let item of list.option.result.selected.flights">
+                            <ng-container *ngFor="let item1 of item.price.fares[0].passengerFares; index as i">
+                                <div class="item-row col" *ngIf="item.ageTypeCode ==='ADT'">
+                                    <div class="left">성인 * {{item1.paxCount}}인</div>
+                                    <div class="right">{{item1.amountSum | number}}원</div>
+                                </div>
+                                <div class="item-row col" *ngIf="item1.ageTypeCode ==='CHD'">
+                                    <div class="left">아동 * {{item1.paxCount}}인</div>
+                                    <div class="right">{{item1.amountSum | number}}원</div>
+                                </div>
+                                <div class="item-row col" *ngIf="item1.ageTypeCode ==='INF'">
+                                    <div class="left">유아 * {{item1.paxCount}}인</div>
+                                    <div class="right">{{item1.amountSum | number}}원</div>
+                                </div>
                             </ng-container>
                         </ng-container>
                     </div>
@@ -107,7 +105,7 @@
                             </div>
                             <div class="right">
                                 <ng-container *ngFor="let item of (flightListRs$ | async)?.option.result.selected.flights">
-                                <span class="font-lg-b color-point2">{{item.price.fares[0].amountSum | number}}원</span>
+                                    <span class="font-lg-b color-point2">{{item.price.fares[0].amountSum | number}}원</span>
                                 </ng-container>
                             </div>
                         </div>

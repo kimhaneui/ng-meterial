@@ -3,7 +3,7 @@ import { DatePipe, Location } from '@angular/common';
 import { Title, Meta } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import { Store } from '@ngrx/store';
 
@@ -24,7 +24,10 @@ import { ApiFlightService } from '@/app/api/flight/api-flight.service';
 import { StorageService } from '@/app/common-source/services/storage/storage.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { HeaderTypes } from '@/app/common-source/enums/header-types.enum';
+import { FlightStore } from '@/app/common-source/enums/flight/flight-store.enum';
 
 import { FlightModalResearchComponent } from '@/app/common-source/modal-components/flight-modal-research/flight-modal-research.component';
 import { FlightModalPriceAlarmComponent } from '@/app/common-source/modal-components/flight-modal-price-alarm/flight-modal-price-alarm.component';
@@ -33,6 +36,7 @@ import { FlightModalDetailFilterComponent } from '@/app/common-source/modal-comp
 import { FlightModalAlignFilterComponent } from '@/app/common-source/modal-components/flight-modal-align-filter/flight-modal-align-filter.component';
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
 import { BasePageComponent } from '../base-page/base-page.component';
+import { BackBtnService } from '@/app/common-source/services/back-btn-service/back-btn.service';
 
 @Component({
     selector: 'app-flight-search-result-multi-page',
@@ -68,11 +72,6 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
 
     howMany: any = '';
     title: any = '';
-
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
 
     infiniteScrollConfig: any = {
         distance: 1,
@@ -119,7 +118,8 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
         private loadingBar: LoadingBarService,
         private countdownTimerService: CountdownTimerService,
         private storageS: StorageService,
-        private alertService: ApiAlertService
+        private alertService: ApiAlertService,
+        private backBtnS: BackBtnService
     ) {
         super(
             platformId,
@@ -160,7 +160,8 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
                                 rq: this.resolveData.rq,
                                 vm: this.resolveData.vm,
                                 detailUpdate: this.resolveData.detailUpdate,
-                                alignUpdate: this.resolveData.alignUpdate
+                                alignUpdate: this.resolveData.alignUpdate,
+                                destination: this.resolveData.vm.trip.destination,
                             },
                             'flight'
                         );
@@ -170,7 +171,7 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
                         console.log('modelData >>', modelData);
 
                         console.info('[스토어에 flight-list-rq-info 저장 시작]');
-                        this.modelInit('flight-list-rq-info', modelData, 'flightSearchResultMultiPage');
+                        this.modelInit(FlightStore.STORE_FLIGHT_LIST_RQ, modelData, 'flightSearchResultMultiPage');
 
                         if (!_.has(this.resolveData.rq, 'condition.filter.itineraryIndexes')) {
                             this.ItineraryCount = 1;
@@ -254,7 +255,8 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
             step: {
                 title: $headerTitle,
                 changeBtnFun: this.onChangeBtnClick,
-                alArmFun: this.onAlarm
+                alArmFun: this.onAlarm,
+                backBtnUrl: 'flight-main'
             },
             detail: $headerTime,
             ctx: this.ctx
@@ -276,7 +278,7 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
                     this.resultList = _.cloneDeep(res);
                     this.isSearchDone = false;
                     console.info('[스토어에 flight-list-rs 저장]');
-                    this.modelInit('flight-list-rs', this.resultList);
+                    this.modelInit(FlightStore.STORE_FLIGHT_LIST_RS, this.resultList);
 
                     this.loadingBool = true;
                     this.loadingBar.complete();
@@ -285,7 +287,7 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
         console.info('[3. API 호출 끝]');
         this.isSearchDone = true;
@@ -325,11 +327,9 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
             vm: this.vmInfo
         };
 
-        const bsModalRef = this.bsModalService.show(FlightModalScheduleComponent, { initialState, ...this.configInfo });
-
+        const bsModalRef = this.bsModalService.show(FlightModalScheduleComponent, { initialState, ...ConfigInfo });
         this.subscriptionList.push(
             this.bsModalService.onHide
-                .pipe(takeWhile(() => this.rxAlive))
                 .subscribe(
                     () => {
                         const path = bsModalRef.content.naviPath;
@@ -354,7 +354,7 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
                 .pipe(take(1))
                 .subscribe(
                     (status: any) => {
-                        if (status === 'END') {
+                        if (status === 'STOP') {
                             this.rxAlive = false;
                             console.info('[status]', status);
                             console.info('[rxAlive]', this.rxAlive);
@@ -460,19 +460,14 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     /**
     * 모든 bsModalService 닫기
     */
     closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -504,7 +499,7 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
     onDetailFilter() {
         console.info('[ 필터 | 상세 ]');
 
-        this.bsModalFilterRef = this.bsModalService.show(FlightModalDetailFilterComponent, { ...this.configInfo });
+        this.bsModalFilterRef = this.bsModalService.show(FlightModalDetailFilterComponent, { ...ConfigInfo });
     }
 
     /**
@@ -513,24 +508,23 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
     onAlignFilter() {
         console.info('[ 필터 | 정렬 ]');
 
-        this.bsModalAlignRef = this.bsModalService.show(FlightModalAlignFilterComponent, { ...this.configInfo });
+        this.bsModalAlignRef = this.bsModalService.show(FlightModalAlignFilterComponent, { ...ConfigInfo });
     }
 
     /**
      * 가격 알람 모달
      */
     onAlarm($ctx) {
-        $ctx.bsModalAlarmRef = $ctx.bsModalService.show(FlightModalPriceAlarmComponent, { ...this.configInfo });
+        $ctx.bsModalAlarmRef = $ctx.bsModalService.show(FlightModalPriceAlarmComponent, { ...ConfigInfo });
     }
 
     onChangeBtnClick = ($ctx) => {
         console.info('[변경 버튼 클릭]', $ctx);
         if ($ctx.isSearchDone) {
-            $ctx.bsModalChangeRef = $ctx.bsModalService.show(FlightModalResearchComponent, { ...this.configInfo });
+            $ctx.bsModalChangeRef = $ctx.bsModalService.show(FlightModalResearchComponent, { ...ConfigInfo });
 
             this.subscriptionList.push(
                 $ctx.bsModalService.onHide
-                    .pipe(takeWhile(() => $ctx.rxAlive))
                     .subscribe(
                         () => {
                             const path = $ctx.bsModalChangeRef.content.naviPath;
@@ -572,6 +566,7 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
 
         // 재검색
         this.loadingBar.start();
+        await this.flightSearch(this.flightSearhRQ);
 
         this.resultList.result.flights = [...flightsList, ...this.resultList.result.flights];
     }
@@ -612,31 +607,12 @@ export class FlightSearchResultMultiPageComponent extends BasePageComponent impl
 
     /**
     * ErrorResultComponent output 이벤트
-    * 에러 발생 > 다시 검색 버튼 클릭 >  메인 이동
-    * 1. 필터 적용된 다구간 1 and 다구간 2,3,4 ~ 일 경우 -> 뒤로가기
-    * 2. 다구간1 and 필터 적용 x 에러 -> 메인 이동
+    * - 에러 발생 > 다시 검색 버튼 클릭 >  메인 이동
+    * - 다구간 1 and 다구간 2,3,4 ~ 일 경우 -> 메인 이동
     * @param e
     */
     errorSearchAgain(e) {
-        const filter = this.resolveData.rq.condition.filter;
-        if (_.has(filter, 'itineraryIndexes') || this.detailUpdate) { // 필터 적용된 다구간 1 and 다구간 2,3,4 ~ 일 경우
-            const bodyEl = document.getElementsByTagName('body')[0];
-            bodyEl.classList.remove('overflow-none');
-            this.location.back();
-        } else { // 다구간1 and 필터 적용 x
-            const path = e;
-            const vm = this.resolveData.vm;
-            console.info('errorSearchAgain', vm);
-            const obj: any = {
-                id: 'flight-search-again',
-                search: vm
-            };
-
-            this.store.dispatch(upsertFlightMainSearch({
-                flightMainSearch: obj
-            }));
-
-            this.router.navigate([path]);
-        }
+        const path = e;
+        this.backBtnS.goFlightMainSearch(path, this.resolveData.vm);
     }
 }

@@ -1,19 +1,19 @@
 import { Component, Inject, Input, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertCommonLayout } from '../../../store/common/common-layout/common-layout.actions';
 
 import * as commonLayoutSelectors from '../../../store/common/common-layout/common-layout.selectors';
 
 import { TranslateService } from '@ngx-translate/core';
-
 import * as _ from 'lodash';
 
+import { BackBtnService } from '../../services/back-btn-service/back-btn.service';
 import { CommonLayoutSideMenuService } from '../../services/common-layout-side-menu/common-layout-side-menu.service';
 
 import { HeaderTypes } from '../../enums/header-types.enum';
@@ -39,18 +39,17 @@ export class HotelHeaderComponent extends BaseChildComponent implements OnInit, 
         sideMenuBool: false
     };
 
-    vm$: Observable<any>;
-
     private subscriptionList: Subscription[];
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
+        public commonLayoutSideMenuService: CommonLayoutSideMenuService,
         private store: Store<any>,
         private translateService: TranslateService,
         private location: Location,
-        public commonLayoutSideMenuService: CommonLayoutSideMenuService,
         private router: Router,
-        private route: ActivatedRoute
+        private route: ActivatedRoute,
+        private backBtnS: BackBtnService
     ) {
         super(platformId);
 
@@ -61,7 +60,6 @@ export class HotelHeaderComponent extends BaseChildComponent implements OnInit, 
     ngOnInit() {
         super.ngOnInit();
         this.headerTitleInit();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -91,20 +89,12 @@ export class HotelHeaderComponent extends BaseChildComponent implements OnInit, 
     }
 
     /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.vm$ = this.store
-            .pipe(select(commonLayoutSelectors.selectComponentStateVm));
-    }
-
-    /**
      * 서브스크라이브 초기화
      */
     subscribeInit() {
         this.subscriptionList.push(
-            this.vm$
-                .pipe(takeWhile(() => this.alive))
+            this.store
+                .select(commonLayoutSelectors.selectComponentStateVm)
                 .subscribe(
                     (ev) => {
                         if (ev) {
@@ -168,10 +158,14 @@ export class HotelHeaderComponent extends BaseChildComponent implements OnInit, 
      */
     public onBackClick(event: any): void {
         event && event.preventDefault();
-
-        const bodyEl = document.getElementsByTagName('body')[0];
-        bodyEl.classList.remove('overflow-none');
-        this.location.back();
+        const backBtnUrl: any = this.headerConfig.step.backBtnUrl || '';
+        if (backBtnUrl === 'hotel-main') {
+            this.backBtnS.goHotelMainSearch(backBtnUrl, this.headerConfig.ctx.routeData, this.headerConfig.ctx.researchRq);
+        } else {
+            const bodyEl = document.getElementsByTagName('body')[0];
+            bodyEl.classList.remove('overflow-none');
+            this.location.back();
+        }
     }
 }
 

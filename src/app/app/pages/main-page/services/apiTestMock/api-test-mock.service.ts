@@ -29,7 +29,7 @@ export class ApiTestMockService {
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             }
             );
         return data;

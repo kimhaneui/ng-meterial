@@ -53,7 +53,6 @@ export class ActivitySearchResultOptionPageComponent extends BasePageComponent i
     public headerConfig: any;
     public viewModel: any;
 
-
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
         public titleService: Title,
@@ -201,7 +200,7 @@ export class ActivitySearchResultOptionPageComponent extends BasePageComponent i
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -305,9 +304,13 @@ export class ActivitySearchResultOptionPageComponent extends BasePageComponent i
      */
     private setAmountSum() {
         this.viewModel.amountSum = 0;
+        this.viewModel.productAmount = 0;
+        this.viewModel.discountAmount = 0;
         this.viewModel.age.map(
             (item: any) => {
                 this.viewModel.amountSum += item.countAmountSum;
+                this.viewModel.productAmount += item.productAmount;
+                this.viewModel.discountAmount += item.discountAmount;
             }
         );
     }
@@ -335,9 +338,6 @@ export class ActivitySearchResultOptionPageComponent extends BasePageComponent i
 
         this.viewModel.countPayment = {};
         this.viewModel.age = [];
-        // const index = event.target.selectedIndex;
-        // console.log(index);
-
         this.viewModel.options[this.viewModel.selectOptionIndex].counts.map(
             (countItem: any, countIndex: number) => {
                 if (countIndex < 9) {
@@ -363,6 +363,7 @@ export class ActivitySearchResultOptionPageComponent extends BasePageComponent i
                     if (!_.isEmpty(adult)) {
                         this.viewModel.countPayment[(countIndex + 1)].push(adult);
                     }
+
                     if (!_.isEmpty(child)) {
                         this.viewModel.countPayment[(countIndex + 1)].push(child);
                     }

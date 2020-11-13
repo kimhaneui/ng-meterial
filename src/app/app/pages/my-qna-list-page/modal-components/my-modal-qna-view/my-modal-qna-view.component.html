@@ -17,20 +17,20 @@
               - 항공 / 호텔 / 액티비티 / 렌터카 / 묶음할인 아이콘 동일 하게 사용
             -->
                     <div class="reservation-title">
-                        <span class="icon sm flight2"></span>
+                        <span [ngClass]="'icon sm ' + icon"></span>
                         <span class="text">{{bookingItemCode}}</span>
                         <span class="label sm type2">답변완료</span>
                     </div>
                     <div class="question-summary">
                         <h2 class="product-title">{{questionTitle}}</h2>
                         <ul>
-                            <li>
+                            <li *ngIf="false">
                                 <span>출발일</span>
                                 <span>2019.12.20 13:00</span>
                             </li>
                             <li>
                                 <span>상담분류</span>
-                                <span>{{boardMasterSeq}}</span>
+                                <span>{{consultingTypeCode}}</span>
                             </li>
                             <li>
                                 <span>접수일시</span>

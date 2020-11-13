@@ -4,10 +4,10 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 
 import * as _ from 'lodash';
 
-
-import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 import { CabinClass } from '../../enums/flight/cabin-class.enum';
 import { TravelerTypeKr } from '../../enums/common/traveler-type.enum';
+
+import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 
 @Component({
     selector: 'app-flight-modal-schedule-information',
@@ -148,6 +148,7 @@ export class FlightModalScheduleInformationComponent extends BaseChildComponent 
                 break;
         }
 
+        this.viewModel.flightTripType = this.dataModel.rq.condition.tripTypeCode;
         switch (this.dataModel.rq.condition.tripTypeCode) {
             case 'OW':
                 this.viewModel.flightPirceText = '편도 요금';
@@ -156,10 +157,10 @@ export class FlightModalScheduleInformationComponent extends BaseChildComponent 
 
             case 'RT':
                 this.viewModel.flightPirceText = '왕복 요금';
-                if ((this.viewModel.selectedList.length === 1)) {
-                    newItineraryItem.wayText = '오는편';
-                } else {
+                if (index === 0) {
                     newItineraryItem.wayText = '가는편';
+                } else {
+                    newItineraryItem.wayText = '오는편';
                 }
                 break;
 

@@ -71,21 +71,13 @@ export class AllRecentListComponent extends BaseChildComponent implements OnInit
                                         if (_.has(item, 'rq')) {
                                             const newItem = {
                                                 index: key,
-                                                travelers: this.parseTraveler(item.vm.travelerStore) + item.vm.travelerStore.cabinClassNm,
-                                                cabinClass: (item.vm.travelerStore.cabinClassTxt),
+                                                bookingName: this.bookingName(item),
+                                                travelers: (item.vm.travelerStore.cabinClassTxt),
+                                                cabinClass: (item.vm.travelerStore.cabinClassNm),
                                                 tripType: item.vm.trip.tripTypeCode,
                                                 dateRange: item.vm.trip.destination[0].dateRange,
-                                                startName: item.vm.trip.destination[0].origin.name,
-                                                startVal: item.vm.trip.destination[0].origin.val,
-                                                endName: item.vm.trip.destination[1].origin.name,
-                                                endVal: item.vm.trip.destination[1].origin.val,
-                                                bookingName: '',
-                                                trip: [],
-                                                pickLocation: this.parseLocation(),
-                                                locationAccept: item.locationAccept,
-                                                locationReturn: item.locationReturn,
-                                                vehicleName: item.vehicleName,
-                                                photoUrls: item.photoUrls
+                                                trip: item.vm.trip,
+                                                destination: item.destination
                                             };
 
 
@@ -304,6 +296,20 @@ export class AllRecentListComponent extends BaseChildComponent implements OnInit
             return '대여/반납 장소가 같음';
         } else {
             return '대여/반납 장소가 다름';
+        }
+    }
+
+    private bookingName(item) {
+
+        if (item.vm.trip.destination.length === 4) {
+            return `${item.vm.trip.destination[0].origin.name} - ${item.vm.trip.destination[1].origin.name} - ${item.vm.trip.destination[2].origin.name} - ${item.vm.trip.destination[3].origin.name}`;
+        } else if (item.vm.trip.destination.length === 3) {
+            return `${item.vm.trip.destination[0].origin.name} - ${item.vm.trip.destination[1].origin.name} - ${item.vm.trip.destination[2].origin.name}`;
+        } else if (item.vm.trip.destination.length === 2) {
+            return `${item.vm.trip.destination[0].origin.name} - ${item.vm.trip.destination[1].origin.name}`;
+        }
+        else if (item.vm.trip.destination.length === 1) {
+            return `${item.vm.trip.destination[0].dest.name}`;
         }
     }
     /**

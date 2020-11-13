@@ -96,7 +96,7 @@ export class AirtelReservationListComponent extends BaseChildComponent implement
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 

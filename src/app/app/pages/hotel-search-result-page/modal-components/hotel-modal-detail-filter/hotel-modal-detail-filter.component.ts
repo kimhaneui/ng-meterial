@@ -1,10 +1,9 @@
 import { Component, Inject, OnInit, PLATFORM_ID, ElementRef, OnDestroy } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { getSelectId } from '@/app/store/hotel-search-result-page/hotel-search-result/hotel-search-result.selectors';
 
@@ -15,13 +14,7 @@ import * as qs from 'qs';
 
 import { HotelComService } from 'src/app/common-source/services/hotel-com-service/hotel-com-service.service';
 
-import {
-    HotelTypeCheckBoxParam,
-    BreakfastCheckBoxParam,
-    BreakfastCheckBoxParamSet,
-    ChainsCheckBoxParam,
-    StarRatingCheckBoxParam
-} from './models/hotel-modal-detail-filter.model';
+import { HotelTypeCheckBoxParam, BreakfastCheckBoxParam, BreakfastCheckBoxParamSet, ChainsCheckBoxParam, StarRatingCheckBoxParam } from './models/hotel-modal-detail-filter.model';
 
 import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 
@@ -75,10 +68,6 @@ export class HotelModalDetailFilterComponent extends BaseChildComponent implemen
     reviewStep: number = 0.5;
 
     ctx: any = this;  // 현재 페이지 지시자
-
-    hotelListRq$: Observable<any>;
-    hotelListRes$: Observable<any>;
-
     all: boolean = false;
     rxAlive: boolean = true;
     loadingBool: Boolean = false;
@@ -92,7 +81,7 @@ export class HotelModalDetailFilterComponent extends BaseChildComponent implemen
         private router: Router,
         private fb: FormBuilder,
         public el: ElementRef,
-        public bsModalRef: BsModalRef,
+        private bsModalRef: BsModalRef,
         private comService: HotelComService
     ) {
         super(platformId);
@@ -105,7 +94,6 @@ export class HotelModalDetailFilterComponent extends BaseChildComponent implemen
     ngOnInit(): void {
         const bodyEl = document.getElementsByTagName('body')[0];
         bodyEl.classList.add('overflow-none');
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -139,24 +127,14 @@ export class HotelModalDetailFilterComponent extends BaseChildComponent implemen
     }
 
     /**
-     * 옵저버블 초기화
-     */
-    observableInit() {
-        this.hotelListRq$ = this.store
-            .pipe(select(getSelectId(['hotel-list-rq-info'])));
-        this.hotelListRes$ = this.store
-            .pipe(select(getSelectId(['hotel-search-result'])));
-    }
-
-    /**
      * 서브스크라이브 초기화
      */
     subscribeInit() {
         console.info('[modal_detial_filter >> subscribeInit]');
 
         this.subscriptionList.push(
-            this.hotelListRq$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(getSelectId(['hotel-list-rq-info']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelListRq$ > subscribe]', ev);
@@ -168,8 +146,8 @@ export class HotelModalDetailFilterComponent extends BaseChildComponent implemen
         );
 
         this.subscriptionList.push(
-            this.hotelListRes$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(getSelectId(['hotel-search-result']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelListRes$ > subscribe]', ev);

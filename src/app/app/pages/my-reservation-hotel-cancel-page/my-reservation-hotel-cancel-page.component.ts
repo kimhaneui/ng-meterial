@@ -39,7 +39,6 @@ import { CommonModalAlertComponent } from '@/app/common-source/modal-components/
 
     travelers: Array<any>;
     apihotelSvc: any;
-    configInfo: ModalOptions;
 
     private subscriptionList: Subscription[];
 
@@ -90,7 +89,7 @@ import { CommonModalAlertComponent } from '@/app/common-source/modal-components/
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -199,9 +198,7 @@ import { CommonModalAlertComponent } from '@/app/common-source/modal-components/
             }
         };
 
-        this.bsModalService.show(CommonModalAlertComponent, {
-            initialState, ...this.configInfo
-        });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
         // this.flightResvCancel(rqInfo);
         // const path = '/my-reservation-flight-detail/' + qs.stringify(rqInfo);
         // this.router.navigate([path], {relativeTo : this.route});
@@ -220,7 +217,7 @@ import { CommonModalAlertComponent } from '@/app/common-source/modal-components/
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         ];

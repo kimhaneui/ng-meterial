@@ -81,7 +81,7 @@ export class HotelModalRoomtypeDetailComponent extends BaseChildComponent implem
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         ];

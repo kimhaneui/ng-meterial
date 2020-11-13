@@ -3,6 +3,7 @@ import { Action, combineReducers } from '@ngrx/store';
 import * as rootReducers from 'src/app/store/store';
 
 import * as commonLayoutReducer from 'src/app/store/common/common-layout/common-layout.reducer';
+import * as commonMajorDestinationReducer from 'src/app/store/common/common-major-destination/common-major-destination.reducer';
 import * as commonUserInfoReducer from 'src/app/store/common/common-user-info/common-user-info.reducer';
 import * as commonRouteReducer from 'src/app/store/common/common-route/common-route.reducer';
 
@@ -17,6 +18,7 @@ export const commonFeatureKey = 'storeCommon';
  */
 export interface commonState {
     [commonLayoutReducer.commonLayoutsFeatureKey]: commonLayoutReducer.State;
+    [commonMajorDestinationReducer.commonMajorDestinationsFeatureKey]: commonMajorDestinationReducer.State;
     [commonUserInfoReducer.commonUserInfoesFeatureKey]: commonUserInfoReducer.State;
     [commonRouteReducer.commonRoutesFeatureKey]: commonRouteReducer.State;
 }
@@ -35,6 +37,7 @@ export interface State extends rootReducers.State {
 export function reducers(state: commonState | undefined, action: Action) {
     return combineReducers({
         [commonLayoutReducer.commonLayoutsFeatureKey]: commonLayoutReducer.reducer,
+        [commonMajorDestinationReducer.commonMajorDestinationsFeatureKey]: commonMajorDestinationReducer.reducer,
         [commonUserInfoReducer.commonUserInfoesFeatureKey]: commonUserInfoReducer.reducer,
         [commonRouteReducer.commonRoutesFeatureKey]: commonRouteReducer.reducer
 

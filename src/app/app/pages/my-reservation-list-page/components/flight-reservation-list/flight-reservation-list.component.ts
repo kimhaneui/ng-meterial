@@ -15,6 +15,8 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 
 import { environment } from '@/environments/environment';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
 import { BaseChildComponent } from '@/app/pages/base-page/components/base-child/base-child.component';
 
@@ -47,12 +49,12 @@ export class FlightReservationListComponent extends BaseChildComponent implement
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        private readonly router: Router,
-        private readonly route: ActivatedRoute,
-        private readonly apiMypageService: ApiMypageService,
-        public bsModalService: BsModalService,
+        private router: Router,
+        private route: ActivatedRoute,
+        private apiMypageService: ApiMypageService,
+        private bsModalService: BsModalService,
         private apiBookingService: ApiBookingService,
-        private readonly loadingBar: LoadingBarService,
+        private loadingBar: LoadingBarService,
         private alertService: ApiAlertService
     ) {
         super(platformId);
@@ -119,7 +121,7 @@ export class FlightReservationListComponent extends BaseChildComponent implement
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -198,6 +200,7 @@ export class FlightReservationListComponent extends BaseChildComponent implement
         const bookingItemCode = tgItem.items[0].bookingItemCode;
         const travelFromDate = tgItem.travelFromDate;
         const travelToDate = tgItem.travelToDate;
+        const tripTypeName = tgItem.items[0].flight.tripTypeName
 
 
         const alertTitle = (() => {
@@ -217,13 +220,33 @@ export class FlightReservationListComponent extends BaseChildComponent implement
 
         const titleTxt = (() => {
             if (categoriesCode === 'IC01') { // 항공
-                return `
-                [${categoriesName}]${bookingName}
-            <br>
-            ${moment(travelFromDate).format('YYYY.MM.DD(dd)')} - ${moment(travelToDate).format('YYYY.MM.DD(dd)')}
-            <br>
-            예약번호 : ${bookingItemCode}
-            `;
+                if (tripTypeName === '편도') {
+                    return `
+                    ${bookingName}
+                    <br>
+                    ${moment(travelFromDate).format('YYYY.MM.DD(dd)')}
+                    <br>
+                    예약번호 : ${bookingItemCode}
+                    `;
+                }
+                else if (tripTypeName === '왕복') {
+                    return `
+                    ${bookingName}
+                    <br>
+                    ${moment(travelFromDate).format('YYYY.MM.DD(dd)')} - ${moment(travelToDate).format('YYYY.MM.DD(dd)')}
+                    <br>
+                    예약번호 : ${bookingItemCode}
+                    `;
+                }
+                else if (tripTypeName === '다구간') {
+                    return `
+                ${bookingName}
+                <br>
+                ${moment(travelFromDate).format('YYYY.MM.DD(dd)')} - ${moment(travelToDate).format('YYYY.MM.DD(dd)')}
+                <br>
+                예약번호 : ${bookingItemCode}
+                `;
+                }
 
             } else if (categoriesCode === 'IC02') { // 호텔
                 return `
@@ -292,12 +315,7 @@ export class FlightReservationListComponent extends BaseChildComponent implement
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     flightBookedCancel($resItem) {
@@ -328,7 +346,7 @@ export class FlightReservationListComponent extends BaseChildComponent implement
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         ];

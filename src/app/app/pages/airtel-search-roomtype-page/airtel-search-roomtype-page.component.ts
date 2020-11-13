@@ -1,7 +1,7 @@
 import { Component, Inject, PLATFORM_ID, OnInit, OnDestroy } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
+import { Subscription, Observable } from 'rxjs';
 import { pluck, take, tap } from 'rxjs/operators';
 
 import { select, Store } from '@ngrx/store';
@@ -22,7 +22,6 @@ import { AirtelSearchRoomtype } from 'src/app/store/airtel-search-result-page/se
 import { PageCodes } from '../../common-source/enums/page-codes.enum';
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
-
 import { BasePageComponent } from '../base-page/base-page.component';
 
 @Component({
@@ -31,20 +30,6 @@ import { BasePageComponent } from '../base-page/base-page.component';
     styleUrls: ['./airtel-search-roomtype-page.component.scss']
 })
 export class AirtelSearchRoomtypePageComponent extends BasePageComponent implements OnInit, OnDestroy {
-    queryParams$: Observable<any>;
-
-    vm$: Observable<any>;
-    serviceCode$: Observable<any>;
-    serviceName$: Observable<any>;
-    succeedYn$: Observable<any>;
-    transactionSetId$: Observable<any>;
-    searchResult$: Observable<any>;
-    hotelInfo$: Observable<any>;
-    photos$: Observable<any>;
-    tripAdvisor$: Observable<any>;
-    poi$: Observable<any>;
-    attractions$: Observable<any>;
-
     searchBool: boolean = false;
     vmModel: AirtelSearchRoomtype;
 
@@ -72,6 +57,10 @@ export class AirtelSearchRoomtypePageComponent extends BasePageComponent impleme
     headerType: any;
     headerConfig: any;
     private subscriptionList: Subscription[];
+    public hotelInfo$: Observable<any>;
+
+    public tripAdvisor$: Observable<any>;
+    public poi$: Observable<any>;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
@@ -110,7 +99,6 @@ export class AirtelSearchRoomtypePageComponent extends BasePageComponent impleme
             }
         });
 
-        this.observableInit();
         await this.dataInit();
     }
 
@@ -123,43 +111,6 @@ export class AirtelSearchRoomtypePageComponent extends BasePageComponent impleme
     }
 
     /**
-     * 옵저버블 초기화
-     */
-    observableInit() {
-        /**
-         * route 옵져버블 셋팅
-         */
-        this.queryParams$ = this.route.queryParams.pipe(
-            take(1),
-            tap(ev => console.log('[queryParams$]', ev)),
-            pluck('search'),
-            tap(ev => console.log('[queryParams$]', ev))
-        );
-
-        /**
-         * vm 옵져버블 셋팅
-         * tap(ev => console.log('[main-search > vm$]', ev))
-         */
-        this.vm$ = this.store
-            .pipe(select(searchRoomtypeSelectors.selectComponentStateVm));
-        // search result
-        this.searchResult$ = this.vm$
-            .pipe(pluck('result'),);
-        // hotelInfo
-        this.hotelInfo$ = this.searchResult$
-            .pipe(pluck('hotel'),);
-        // hotelInfo
-        this.photos$ = this.hotelInfo$
-            .pipe(pluck('photos'),);
-        // tripAdvisor
-        this.tripAdvisor$ = this.hotelInfo$
-            .pipe(pluck('tripAdvisor'),);
-        // pois
-        this.poi$ = this.hotelInfo$
-            .pipe(pluck('poi'),);
-    }
-
-    /**
      * 데이터 초기화
      */
     async dataInit() {
@@ -167,7 +118,13 @@ export class AirtelSearchRoomtypePageComponent extends BasePageComponent impleme
          * 파라메터 상태에 따라 api 호출 여부 결정
          */
         this.subscriptionList.push(
-            this.queryParams$
+            this.route.queryParams
+                .pipe(
+                    take(1),
+                    tap(ev => console.log('[queryParams$]', ev)),
+                    pluck('search'),
+                    tap(ev => console.log('[queryParams$]', ev))
+                )
                 .subscribe(
                     (ev: any) => (ev) ? this.searchBool = true : this.searchBool = false
                 )
@@ -198,8 +155,8 @@ export class AirtelSearchRoomtypePageComponent extends BasePageComponent impleme
      */
     initDataLoad($bool: boolean = true): void {
         this.subscriptionList.push(
-            this.vm$
-                .pipe(take(1))
+            this.store
+                .pipe(select(searchRoomtypeSelectors.selectComponentStateVm))
                 .subscribe(
                     (ev) => {
                         this.initData = ($bool) ? _.cloneDeep(ev) : ev;

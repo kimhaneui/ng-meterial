@@ -1,10 +1,15 @@
 import { Component, OnInit, PLATFORM_ID, Inject, Input, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
+
 import { Store } from '@ngrx/store';
-import { Observable, Subscription } from 'rxjs';
-import * as _ from 'lodash';
-import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
+
 import { upsertFlightModalTravelerOption } from 'src/app/store/flight-common/flight-modal-traveler-option/flight-modal-traveler-option.actions';
+
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+
+import * as _ from 'lodash';
+
+import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 import { FlightModalChildrenInformaionComponent } from '../flight-modal-children-informaion/flight-modal-children-informaion.component';
 
 @Component({
@@ -16,13 +21,8 @@ export class FlightModalTravelerOptionComponent extends BaseChildComponent imple
     @Input() selectedOption: any;
 
     storeModel: any;
-
-    modalTravelerOption$: Observable<any>;  // 좌석등급, 인원 수
-
     travelerOptionSub: Subscription;        // 좌석등급, 인원 수
-
     modalRef2: BsModalRef;
-
     rxAlive: any = true;
 
     vm: any = {
@@ -146,10 +146,6 @@ export class FlightModalTravelerOptionComponent extends BaseChildComponent imple
      * @param event
      */
     onChangeCount(type: string, event: string) {
-
-        console.info('[onChangeCount type>]', type);
-        console.info('[onChangeCount event>]', event);
-
         if (this.vm.adultCount + this.vm.childCount + this.vm.infantCount == 9 && event == 'up') {
             alert('예약당 최대 인원수는 9명입니다. 9명을 초과하는 경우 별도로 에약하시기 바랍니다.');
             return;

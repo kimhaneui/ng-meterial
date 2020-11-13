@@ -95,7 +95,7 @@ export class FlightBasketListComponent extends BaseChildComponent implements OnI
                 }
             })
             .catch((err: any) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
 
 

@@ -1,12 +1,17 @@
 import { Component, OnInit, ViewEncapsulation, Inject, PLATFORM_ID, AfterViewInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Meta, Title } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
+
 import { Store } from '@ngrx/store';
-import { HeaderTypes } from '../../common-source/enums/header-types.enum';
-import { BasePageComponent } from '../base-page/base-page.component';
-import { SeoCanonicalService } from '../../common-source/services/seo-canonical/seo-canonical.service';
+
 import { TranslateService } from '@ngx-translate/core';
+
+import { SeoCanonicalService } from '../../common-source/services/seo-canonical/seo-canonical.service';
+
+import { HeaderTypes } from '../../common-source/enums/header-types.enum';
+
+import { BasePageComponent } from '../base-page/base-page.component';
 
 @Component({
     selector: 'app-activity-page',
@@ -23,10 +28,7 @@ export class ActivityPageComponent extends BasePageComponent implements OnInit, 
         public titleService: Title,
         public metaTagService: Meta,
         public seoCanonicalService: SeoCanonicalService,
-        public translate: TranslateService,
-        private readonly store: Store<any>,
-        private readonly route: ActivatedRoute,
-        private readonly http: HttpClient
+        public translate: TranslateService
     ) {
         super(
             platformId,

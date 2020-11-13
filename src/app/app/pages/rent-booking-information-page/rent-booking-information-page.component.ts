@@ -4,9 +4,9 @@ import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@ang
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of, Subscription } from 'rxjs';
-import { catchError, take, takeWhile, finalize } from 'rxjs/operators';
+import { catchError, take, finalize } from 'rxjs/operators';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertRentBookingInformationPage } from '../../store/rent-booking-information-page/rent-booking-information-page/rent-booking-information-page.actions';
 import { deleteCommonUserInfo, upsertCommonUserInfo } from '../../store/common/common-user-info/common-user-info.actions';
@@ -28,8 +28,11 @@ import { JwtService } from '../../common-source/services/jwt/jwt.service';
 import { UtilUrlService } from '../../common-source/services/util-url/util-url.service';
 import { ApiRentService } from '../../api/rent/api-rent.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
+import { CommonValidatorService } from '@/app/common-source/services/common-validator/common-validator.service';
 
 import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
@@ -38,7 +41,6 @@ import { RentModalAgreementComponent } from './modal-components/rent-modal-agree
 import { RentModalFlightInfoComponent } from './modal-components/rent-modal-flight-info/rent-modal-flight-info.component';
 import { RentModalBranchofficeComponent } from './modal-components/rent-modal-branchoffice/rent-modal-branchoffice.component';
 import { CommonModalAlertComponent } from '../../common-source/modal-components/common-modal-alert/common-modal-alert.component';
-import { CommonValidatorService } from '@/app/common-source/services/common-validator/common-validator.service';
 
 @Component({
     selector: 'app-rent-booking-information-page',
@@ -84,10 +86,9 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
 
     userInfo: any;
     traveler: any;
-    commonUserInfo$: any;
     private subscriptionList: Subscription[];
 
-    locationType: boolean = true;
+    locationType: boolean = false;
 
     public bookingLoading: boolean;
 
@@ -128,7 +129,6 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
 
     ngOnInit() {
         super.ngOnInit();
-        this.observableInit();
         this.subscribeInit();
         this.subscriptionList.push(
             this.route.data
@@ -151,6 +151,8 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
 
                         this.resolveData.rq.condition.vehicleIndex = Number(this.resolveData.rq.condition.vehicleIndex);
                         this.resolveData.rq.condition.vendorAmountSum = Number(this.resolveData.rq.condition.vendorAmountSum);
+                        this.resolveData.rq.condition.vendorCompCode = Number(this.resolveData.rq.condition.vendorCompCode);
+
                         if (_.has(this.resolveData.rq.condition, 'rateIdentifier'))
                             this.resolveData.rq.condition.rateIdentifier = (this.resolveData.rq.condition.rateIdentifier.length === 0) ? null : this.resolveData.rq.condition.rateIdentifier;
                         else
@@ -200,17 +202,10 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
         this.closeAllModals();
     }
 
-
-    observableInit() {
-        this.commonUserInfo$ = this.store.pipe(
-            select(commonUserInfoSelectors.getSelectId(['commonUserInfo']))
-        );
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.commonUserInfo$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store.
+                select(commonUserInfoSelectors.getSelectId(['commonUserInfo']))
                 .subscribe(
                     (ev: any) => {
                         if (ev) {
@@ -259,7 +254,7 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
                         }
                     })
                     .catch((err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     });
 
                 console.info('[travelerRes]', travelerRes);
@@ -333,7 +328,6 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
                 this.apiRentService.POST_RENT_LIST(this.resolveData.listFilterRq)
             ])
                 .pipe(
-                    takeWhile(() => this.rxAlive),
                     catchError(([err1, err2]) => of([err1, err2])),
                     finalize(() => { this.bookingLoading = false; })
                 )
@@ -363,11 +357,15 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
                         console.log(this.listFilterRs, 'listFilterRs');
                         console.log(this.rentRuleRs, 'this.rentRuleRs');
 
-                        if (this.rentRuleRs.vendorCurrencyCode === 'KRW')
+                        if (this.rentRuleRs.vendorCurrencyCode === 'KRW') {
+                            this.mainForm.addControl('license', new FormControl('', Validators.required));
                             this.locationType = true;
+                        }
                         else {
+                            this.mainForm.removeControl('license');
                             this.locationType = false;
                         }
+
                     }
                 )
         );
@@ -389,7 +387,8 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
             driverNameKr: '',
             driverLastName: '',
             driverFirstName: '',
-            driverGender: ''
+            driverGender: '',
+
         });
     }
 
@@ -426,8 +425,15 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
 
             agreeList: this.fb.array([new FormControl(false), new FormControl(false), new FormControl(false)], [this.comValidator.validateAgreeList]),
 
-            selectTraveler: ['NOTHING']
+            selectTraveler: ['NOTHING'],
         });
+
+        if (this.locationType == true) {
+            this.mainForm.addControl('license', new FormControl('', Validators.required));
+        } else if (this.locationType == false) {
+            this.mainForm.removeControl('license');
+        }
+
     }
 
     get agreeList(): FormArray { return this.mainForm.get('agreeList') as FormArray; }
@@ -478,7 +484,8 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
     async doBooking($form) {
         console.info('[예약진행]', $form.value);
         const vehicles = this.listFilterRs.vehicles[0]; // 렌터카 1건 조회
-        const rq = {
+
+        const rq: any = {
             stationTypeCode: environment.STATION_CODE,
             currency: 'KRW',
             language: 'KO',
@@ -512,6 +519,7 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
                         vendorCurrencyCode: vehicles.vendorCurrencyCode,
                         vehicleVendorCode: vehicles.vehicleVendorCode,
                         vendorAmountSum: vehicles.vendorAmountSum,
+                        vendorCompCode: Number(vehicles.vendorCompCode),
                         sippCode: vehicles.sippCode,
                         baseRateTypeCode: vehicles.baseRateTypeCode,
                         vehicleTypeOwner: vehicles.vehicleTypeOwner,
@@ -528,11 +536,13 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
                             cityCodeIata: vehicles.return.cityCodeIata,
                             locationCode: vehicles.return.locationCode
                         },
-                        rateCategoryCode: vehicles.rateCategoryCode
+                        rateCategoryCode: vehicles.rateCategoryCode,
                     }
                 ]
             }
         };
+
+        rq.condition.rentItems[0].license = this.mainForm.value.license || undefined;
 
         this.postBooking(rq);
     }
@@ -566,9 +576,9 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
                             this.alertService.showApiAlert(res.errorMessage);
                         }
                     },
-                    (error: any) => {
-                        console.info('[booking error]', error);
-                        this.alertService.showApiAlert(error.error.errorMessage);
+                    (err: any) => {
+                        console.info('[booking error]', err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -579,12 +589,7 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
     //         titleTxt: $str,
     //         closeObj: null
     //     };
-    //     // ngx-bootstrap config
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: false
-    //     };
-    //     this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+    //     this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     // }
 
     inValidAlert(targetId, titleTxt?, alertHtml?) {
@@ -601,13 +606,7 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
         if (alertHtml)
             initialState.alertHtml = alertHtml;
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
         this.subscriptionList.push(
             this.bsModalService.onHidden
                 .subscribe(
@@ -648,7 +647,7 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
      * 모든 bsModal 창 닫기
      */
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -658,12 +657,8 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
             titleTxt: $str,
             closeObj: null
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -692,13 +687,7 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
             })
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalService.show(RentModalAgreementComponent, { initialState, ...configInfo });
+        this.bsModalService.show(RentModalAgreementComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -773,15 +762,10 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
             address: this.listFilterRs.locations[idx].address,
             vehicleName: this.listFilterRs.vehicles[0].vehicleName,
             vehicleVendorCode: this.listFilterRs.vehicles[0].vehicleVendorCode,
+            vendorCompCode: Number(this.listFilterRs.vehicles[0].vendorCompCode),
         };
 
-
-        // ngx-bootstrap configlongitude
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(RentModalBranchofficeComponent, { initialState, ...configInfo });
+        this.bsModalService.show(RentModalBranchofficeComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -792,14 +776,7 @@ export class RentBookingInformationPageComponent extends BasePageComponent imple
 
         // 모달 전달 데이터
         const initialState = {};
-
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(RentModalFlightInfoComponent, { initialState, ...configInfo });
-
+        this.bsModalService.show(RentModalFlightInfoComponent, { initialState, ...ConfigInfo });
     }
 
     /**

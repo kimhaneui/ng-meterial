@@ -1,29 +1,43 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
-import { BaseChildComponent } from '../../../base-page/components/base-child/base-child.component';
-
-import { select, Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
-import { ActivatedRoute, Router } from '@angular/router';
-
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { RentUtilService } from '../../../../common-source/services/rent-com-service/rent-util.service';
-import { Observable, Subscription } from 'rxjs';
-import * as rentModalDestinationSelectors from '../../../../store/rent-common/rent-modal-destination/rent-modal-destination.selectors';
-import * as rentModalCalendarSelectors from '../../../../store/rent-common/rent-modal-calendar/rent-modal-calendar.selectors';
-import { take, takeWhile } from 'rxjs/operators';
-import * as moment from 'moment';
-import { environment } from '@/environments/environment';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
+
+import { Store } from '@ngrx/store';
+
 import { upsertRentMainSearch } from '../../../../store/rent-main-page/rent-main-search/rent-main-search.actions';
 import { clearRentModalDestinations } from '../../../../store/rent-common/rent-modal-destination/rent-modal-destination.actions';
 import { clearRentModalCalendars } from '../../../../store/rent-common/rent-modal-calendar/rent-modal-calendar.actions';
-import * as _ from 'lodash';
+
+import * as rentModalDestinationSelectors from '../../../../store/rent-common/rent-modal-destination/rent-modal-destination.selectors';
+import * as rentModalCalendarSelectors from '../../../../store/rent-common/rent-modal-calendar/rent-modal-calendar.selectors';
 import * as rentSearchResultPageSelectors from '../../../../store/rent-search-result-page/rent-search-result-page/rent-search-result-page.selectors';
+
+import { TranslateService } from '@ngx-translate/core';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
-import { ModalDestinationComponent } from '@/app/common-source/modal-components/modal-destination/modal-destination.component';
+
+import * as moment from 'moment';
+import * as _ from 'lodash';
 import * as qs from 'qs';
-import { StoreCategoryTypes } from '../../../../common-source/enums/store-category-types.enum';
-import { CommonModalAlertComponent } from '../../../../common-source/modal-components/common-modal-alert/common-modal-alert.component';
+
+import { environment } from '@/environments/environment';
+
+import { RentUtilService } from '../../../../common-source/services/rent-com-service/rent-util.service';
 import { CommonValidatorService } from '@/app/common-source/services/common-validator/common-validator.service';
+import { MajorDestinationService } from '@/app/common-source/services/major-destination/major-destination.service';
+
+import { RequestParam } from '@/app/common-source/models/common/condition.model';
+import { majorDestinationRq } from '@/app/common-source/models/common/major-destination.model';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { StoreCategoryTypes } from '../../../../common-source/enums/store-category-types.enum';
+import { RentCommon } from '@/app/common-source/enums/rent/rent-common.enum';
+import { InsuranceList } from '@/app/common-source/models/rent/insurance.model';
+
+import { BaseChildComponent } from '../../../base-page/components/base-child/base-child.component';
+import { ModalDestinationComponent } from '@/app/common-source/modal-components/modal-destination/modal-destination.component';
+import { CommonModalAlertComponent } from '../../../../common-source/modal-components/common-modal-alert/common-modal-alert.component';
 import { CommonModalCalendarComponent } from '@/app/common-source/modal-components/common-modal-calendar/common-modal-calendar.component';
 
 @Component({
@@ -53,31 +67,29 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
     };
 
     rxAlive: boolean = true;
-    modalDestinationPickup$: Observable<any>; // 인수장소
-    modalDestinationReturn$: Observable<any>; // 반납장소
-    modalCalendar$: Observable<any>; // 캘린더
-    rentListRq$: Observable<any>; // 렌터카 검색 request
-
     loadingBool: boolean = false;
 
     private subscriptionList: Subscription[];
-
     locationType: boolean = true;
-
+    private majorRq: RequestParam;
+    insuranceList = InsuranceList;
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        private store: Store<any>,
         public translateService: TranslateService,
+        private store: Store<any>,
         private fb: FormBuilder,
         private route: ActivatedRoute,
         private router: Router,
-        public rentUtilSvc: RentUtilService,
+        private rentUtilSvc: RentUtilService,
         private bsModalService: BsModalService,
         private comValidator: CommonValidatorService,
-        public bsModalRef: BsModalRef
+        private bsModalRef: BsModalRef,
+        private majorDestinationS: MajorDestinationService
     ) {
         super(platformId);
+
         this.subscriptionList = [];
+        this.getMajorDestination();
     }
 
     ngOnInit(): void {
@@ -87,7 +99,6 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
         this.storeRentCommonInit(); // store > rent-common 초기화
         this.vmInit(); // vm 초기화
         this.mainFormInit(); // 폼 초기화
-        this.observableInit(); // 옵져버블 초기화
         this.subscribeInit(); // 서브스크라이브 초기화
     }
 
@@ -100,6 +111,12 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
         this.rxAlive = false;
         const bodyEl = document.getElementsByTagName('body')[0];
         bodyEl.classList.remove('overflow-none');
+    }
+
+    private getMajorDestination() {
+        this.majorRq = majorDestinationRq;
+        this.majorRq.condition.itemCategoryCode = RentCommon.IITEM_CATEGORY_CODE;
+        this.majorDestinationS.checkDestination() && this.majorDestinationS.getMajorDestination(this.majorRq);
     }
 
     /**
@@ -127,8 +144,10 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
 
     rqInfoInit() {
 
+
         setTimeout(() => {
             console.info('[rqInfo 셋팅]', this.rqInfo);
+
             this.vm.locationAccept = this.rqInfo.locationAccept;
             this.vm.locationReturn = this.rqInfo.locationReturn;
             this.vm.locationReturnBool = (this.rqInfo.locationReturnBool === 'true');
@@ -141,6 +160,9 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
 
             this.vm.driverBirthday = moment(this.rqInfo.driverBirthday).format('YYYYMMDD');
 
+            this.vm.insurance = this.rqInfo.rq.condition.insurance || null;
+
+
             this.mainForm.patchValue({
                 locationAccept: this.vm.locationAccept.name,
                 locationReturn: this.vm.locationReturn.name,
@@ -149,28 +171,17 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
                 toDateStr: this.vm.toDateStr,
                 toTimeVal: this.vm.toTimeVal,
                 driverBirthday: this.vm.driverBirthday,
-                locationReturnBool: this.vm.locationReturnBool
+                locationReturnBool: this.vm.locationReturnBool,
+                insurance: this.vm.insurance || null
             });
 
             this.onReturnChkClick(); // 유효성 업데이트
 
         });
 
-    }
 
-    /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.modalDestinationPickup$ = this.store
-            .pipe(select(rentModalDestinationSelectors.getSelectId(['pickup'])));
-        this.modalDestinationReturn$ = this.store
-            .pipe(select(rentModalDestinationSelectors.getSelectId(['return'])));
-        // 캘린더
-        this.modalCalendar$ = this.store
-            .pipe(select(rentModalCalendarSelectors.getSelectId(['rent-main'])));
-        this.rentListRq$ = this.store
-            .pipe(select(rentSearchResultPageSelectors.getSelectId('rent-list-rq-info')));
+
+
     }
 
     /**
@@ -181,8 +192,8 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
          * 렌터카 인수 장소
          */
         this.subscriptionList.push(
-            this.modalDestinationPickup$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(rentModalDestinationSelectors.getSelectId(['pickup']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalDestinationPickup$ > subscribe]', ev);
@@ -194,12 +205,16 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
                             setTimeout(() => {
                                 this.changeLocationReturnBool();
                             });
+                            if (ev.countryCode === 'KR') {
+                                this.mainForm.addControl('insurance', new FormControl('', Validators.required));
+                                this.locationType = true;
+                            }
+                            else {
+                                this.locationType = false;
+                            }
+
                         }
-                        if (this.vm.locationAccept.countryCode === 'KR')
-                            this.locationType = true;
-                        else {
-                            this.locationType = false;
-                        }
+
                     }
                 )
         );
@@ -208,8 +223,8 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
          * 렌터카 반납 장소
          */
         this.subscriptionList.push(
-            this.modalDestinationReturn$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(rentModalDestinationSelectors.getSelectId(['return']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalDestinationReturn$ > subscribe]', ev);
@@ -227,8 +242,8 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
          * 인수날짜 ~ 반납날짜
          */
         this.subscriptionList.push(
-            this.modalCalendar$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(rentModalCalendarSelectors.getSelectId(['rent-main']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalCalendar$ > subscribe]', ev);
@@ -245,8 +260,8 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
         );
 
         this.subscriptionList.push(
-            this.rentListRq$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(rentSearchResultPageSelectors.getSelectId('rent-list-rq-info'))
                 .subscribe(
                     (ev: any) => {
                         console.info('[rentListRq$ > subscribe]', ev);
@@ -257,6 +272,12 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
                         } else {
                             this.loadingBool = false;
                         }
+                        if (this.rqInfo.locationAccept.countryCode === 'KR')
+                            this.locationType = true;
+                        else {
+                            this.locationType = false;
+                        }
+
                     }
                 )
         );
@@ -315,7 +336,13 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
                 ]
             ),
             driverBirthdayBool: new FormControl(true, [Validators.requiredTrue])
+
         });
+        if (this.locationType == true) {
+            this.mainForm.addControl('insurance', new FormControl('', Validators.required));
+        } else if (this.locationType == false) {
+            this.mainForm.removeControl('insurance');
+        }
         this.onFormValueChanges();
     }
 
@@ -365,7 +392,8 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
                 driverBirthday: driverBirthday,
                 limits: [0, 10],
                 sortOrder: 'Recommend',
-                filter: {}
+                filter: {},
+                insurance: this.vm.insurance,
             }
         };
 
@@ -414,17 +442,6 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
 
         const obj: any = {
             storeId: $storeId,
-            majorDestinationRq: {
-                rq: {
-                    currency: 'KRW',
-                    language: 'KO',
-                    stationTypeCode: environment.STATION_CODE,
-                    condition: {
-                        itemCategoryCode: itemCategoryCode,
-                        compCode: environment.COMP_CODE
-                    }
-                }
-            },
             destinationRq: {
                 rq: {
                     currency: 'KRW',
@@ -492,15 +509,11 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
             closeObj: null
         };
 
-        if (alertHtml)
+        if (alertHtml) {
             initialState.alertHtml = alertHtml;
+        }
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     onFromTimeChange(e) {
@@ -613,17 +626,6 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
         // 모달 전달 데이터
         const initialState = {
             storeId: storeId,
-            majorDestinationRq: {
-                rq: {
-                    currency: 'KRW',
-                    language: 'KO',
-                    stationTypeCode: environment.STATION_CODE,
-                    condition: {
-                        itemCategoryCode: itemCategoryCode,
-                        compCode: environment.COMP_CODE
-                    }
-                }
-            },
             destinationRq: {
                 rq: {
                     currency: 'KRW',
@@ -638,15 +640,9 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
 
-        this.bsModalService.show(ModalDestinationComponent, { initialState, ...configInfo });
+        this.bsModalService.show(ModalDestinationComponent, { initialState, ...ConfigInfo });
 
     }
 
@@ -662,17 +658,6 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
         // 모달 전달 데이터
         const initialState = {
             storeId: storeId,
-            majorDestinationRq: {
-                rq: {
-                    currency: 'KRW',
-                    language: 'KO',
-                    stationTypeCode: environment.STATION_CODE,
-                    condition: {
-                        itemCategoryCode: itemCategoryCode,
-                        compCode: environment.COMP_CODE
-                    }
-                }
-            },
             destinationRq: {
                 rq: {
                     currency: 'KRW',
@@ -687,15 +672,9 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
 
-        this.bsModalService.show(ModalDestinationComponent, { initialState, ...configInfo });
+        this.bsModalService.show(ModalDestinationComponent, { initialState, ...ConfigInfo });
 
     }
 
@@ -769,16 +748,10 @@ export class RentModalResearchComponent extends BaseChildComponent implements On
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
         initialState.step = $tgNum;
         initialState.selectList = _.slice(initialState.selectList, 0, $tgNum);
-        this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...ConfigInfo });
 
 
     }

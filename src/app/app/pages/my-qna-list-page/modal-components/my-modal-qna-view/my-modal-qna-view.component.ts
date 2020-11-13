@@ -15,12 +15,13 @@ export class MyModalQnaViewComponent extends BaseChildComponent implements OnIni
     $element: any;
     public viewModel: any;
     bookingItemCode: any;
-    boardMasterSeq: any;
     requestDatetime: any;
     questionTitle: any;
     questionDetail: any;
     answerDetail: any;
     handleFinishDatetime: any;
+    consultingTypeCode: any;
+    icon: any;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
@@ -34,7 +35,6 @@ export class MyModalQnaViewComponent extends BaseChildComponent implements OnIni
         super.ngOnInit();
         const bodyEl = document.getElementsByTagName('body')[0];
         bodyEl.classList.add('overflow-none');
-        console.log(this.viewModel, 'this.viewModel');
     }
 
     modalClose() {

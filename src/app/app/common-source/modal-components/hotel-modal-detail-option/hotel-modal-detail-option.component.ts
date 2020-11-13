@@ -1,20 +1,24 @@
 import { Component, Inject, OnInit, PLATFORM_ID, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
-import { select, Store } from '@ngrx/store';
-import { ActivatedRoute } from '@angular/router';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
-import * as _ from 'lodash';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile, take } from 'rxjs/operators';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
-import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
+import { Store } from '@ngrx/store';
 
 import { getSelectId } from 'src/app/store/hotel-common/hotel-modal-detail-option/hotel-modal-detail-option.selectors';
 import { upsertHotelModalDetailOption, clearHotelModalDetailOptions } from 'src/app/store/hotel-common/hotel-modal-detail-option/hotel-modal-detail-option.actions';
+
 import * as hotelSearchResultPageSelectors from 'src/app/store/hotel-search-result-page/hotel-search-result/hotel-search-result.selectors';
 
+import { TranslateService } from '@ngx-translate/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
+
+import * as _ from 'lodash';
+
 import { HotelComService } from '../../services/hotel-com-service/hotel-com-service.service';
+
+import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 
 @Component({
     selector: 'app-hotel-modal-detail-option',
@@ -135,10 +139,7 @@ export class HotelModalDetailOptionComponent extends BaseChildComponent implemen
     private subscribeInit() {
         this.subscriptionList.push(
             this.store
-                .pipe(
-                    select(hotelSearchResultPageSelectors.getSelectId('hotel-list-rq-info')),
-                    takeWhile(() => this.rxAlive)
-                )
+                .select(hotelSearchResultPageSelectors.getSelectId(['hotel-list-rq-info']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelListRq observableInit > subscribe]', ev);
@@ -151,10 +152,7 @@ export class HotelModalDetailOptionComponent extends BaseChildComponent implemen
 
         this.subscriptionList.push(
             this.store
-                .pipe(
-                    select(getSelectId(['hotelDetailOpt'])),
-                    takeWhile(() => this.rxAlive)
-                )
+                .select(getSelectId(['hotelDetailOpt']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[DetailOption observableInit > subscribe]', ev);

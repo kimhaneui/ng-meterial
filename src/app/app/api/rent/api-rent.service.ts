@@ -1,93 +1,76 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { environment } from '@/environments/environment';
+import { Observable } from 'rxjs';
+
+import { RestCallService } from '../rest-call/rest-call.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ApiRentService {
-
-    baseUrl: String;
-
-    httpOptions = {
-        headers: new HttpHeaders({
-            'Content-Type': 'application/json;charset=UTF-8'
-        })
-    };
-
-    constructor(private http: HttpClient) {
-        this.baseUrl = environment.API_URL;
-    }
+    constructor(
+        private restCallS: RestCallService
+    ) { }
 
     /**
      * 추천 렌터카 조회
      */
-    POST_RENT_RECOMMEND($body?: any, $opt?: any) {
-        return this.httpPost('/rent/recommend', $body, $opt);
+    POST_RENT_RECOMMEND(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/rent/recommend', body, opt);
     }
 
     /**
      * 렌터카 검색
      */
-    POST_RENT_LIST($body?: any, $opt?: any) {
-        return this.httpPost('/rent/list', $body, $opt);
+    POST_RENT_LIST(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/rent/list', body, opt);
     }
 
     /**
      * 렌터카 상세
      */
-    POST_RENT_RENTRULE($body?: any, $opt?: any) {
-        return this.httpPost('/rent/rent-rule', $body, $opt);
+    POST_RENT_RENTRULE(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/rent/rent-rule', body, opt);
     }
 
     /**
      * 렌터카 옵션 검색
      */
-    POST_RENT_OPTION($body?: any, $opt?: any) {
-        return this.httpPost('/rent/option', $body, $opt);
+    POST_RENT_OPTION(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/rent/option', body, opt);
     }
 
     /**
      * 렌터카 현재 상황 조회
      */
-    POST_RENT_STATS($body?: any, $opt?: any) {
-        return this.httpPost('/rent/stats', $body, $opt);
+    POST_RENT_STATS(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/rent/stats', body, opt);
     }
 
     /**
      * 렌터카 운임규정 조회
      */
-    POST_RENT_CONDITION($body?: any, $opt?: any) {
-        return this.httpPost('/rent/condition', $body, $opt);
+    POST_RENT_CONDITION(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/rent/condition', body, opt);
     }
 
     /**
      * 렌터카 위시에 추가
      */
-    POST_RENT_BASKET($body?: any, $opt?: any) {
-        return this.httpPost('/rent/basket', $body, $opt);
+    POST_RENT_BASKET(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/rent/basket', body, opt);
     }
 
     /**
      * 렌터카 멤버쉽 입력
      */
-    POST_RENT_MEMEBERSHIP($body?: any, $opt?: any) {
-        return this.httpPost('/rent/memebership', $body, $opt);
+    POST_RENT_MEMEBERSHIP(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/rent/memebership', body, opt);
     }
 
     /**
      * 렌터카 취소하기
      */
-    POST_RENT_CANCEL($body?: any, $opt?: any) {
-        return this.httpPost('/booking/rent/cancel', $body, $opt);
-    }
-
-
-    httpPost($url, $body?: any, $opt?: any) {
-        const url = this.baseUrl + $url;
-        const body = $body || {};
-        const options = { ...this.httpOptions, ...$opt };
-
-        return this.http.post(url, body, options);
+    POST_RENT_CANCEL(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/booking/rent/cancel', body, opt);
     }
 }

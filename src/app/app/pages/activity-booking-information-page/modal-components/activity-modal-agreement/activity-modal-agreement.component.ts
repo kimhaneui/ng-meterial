@@ -118,7 +118,7 @@ export class ActivityModalAgreementComponent extends BaseChildComponent implemen
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );

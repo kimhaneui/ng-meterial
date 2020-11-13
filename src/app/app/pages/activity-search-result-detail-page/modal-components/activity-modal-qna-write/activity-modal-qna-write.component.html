@@ -1,0 +1,28 @@
+<!-- Modal -->
+<div class="modal bg">
+    <!-- modal header -->
+    <div class="modal-header">
+        <h1>상품문의</h1>
+        <div class="right">
+            <a (click)="onCloseClick($event)" class="icon sm common-close">닫기</a>
+        </div>
+    </div>
+    <!-- modal contents -->
+    <div class="modal-contents">
+        <form [formGroup]="mainForm" novalidate #f="ngForm">
+            <div class="page-contents-type2 fixed-btn-footer">
+                <div class="row-group mb30">
+                    <div class="row">
+                        <h2 class="row-title">상담 내용</h2>
+                        <div class="textarea line">
+                            <textarea formControlName="questionDetail" cols="30" rows="10" placeholder="문의 하시는 내용을 입력해주세요."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group fixed-bottom pd bg2">
+                    <button (click)="writeComplete()" class="btn lg default" role="button">문의 하기</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -19,6 +19,8 @@ import { ApiMypageService } from 'src/app/api/mypage/api-mypage.service';
 
 import { environment } from '@/environments/environment';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
 import { ReviewWriteStarComponent } from './modal-components/review-write-star/review-write-star.component';
@@ -106,7 +108,7 @@ export class MyReviewListPageComponent extends BasePageComponent implements OnIn
         this.headerInit();
     }
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -162,7 +164,7 @@ export class MyReviewListPageComponent extends BasePageComponent implements OnIn
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -186,25 +188,11 @@ export class MyReviewListPageComponent extends BasePageComponent implements OnIn
         this.turmNo = no;
     }
     reviewWrite() {
-        const initialState = {
-
-        };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(ReviewWriteStarComponent, { initialState, ...configInfo });
+        const initialState = {};
+        this.bsModalService.show(ReviewWriteStarComponent, { initialState, ...ConfigInfo });
     }
     addPhotoClick() {
-        const initialState = {
-
-        };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(ReviewPhotoListComponent, { initialState, ...configInfo });
+        const initialState = {};
+        this.bsModalService.show(ReviewPhotoListComponent, { initialState, ...ConfigInfo });
     }
 }

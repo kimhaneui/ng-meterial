@@ -1,9 +1,14 @@
 import { Component, ViewChild, OnDestroy } from '@angular/core';
-import { Store, select } from '@ngrx/store';
-import { Observable, Subscription } from 'rxjs';
-import * as commonLayoutSelectors from '../../store/common/common-layout/common-layout.selectors';
+import { Subscription } from 'rxjs';
+
+import { Store } from '@ngrx/store';
+
 import { upsertCommonLayout } from '../../store/common/common-layout/common-layout.actions';
+
+import * as commonLayoutSelectors from '../../store/common/common-layout/common-layout.selectors';
+
 import { BsModalRef } from 'ngx-bootstrap/modal';
+
 import { ModalMypageMainComponent } from './modal-components/modal-mypage-main/modal-mypage-main.component';
 
 @Component({
@@ -13,7 +18,6 @@ import { ModalMypageMainComponent } from './modal-components/modal-mypage-main/m
 })
 export class PageLayoutComponent implements OnDestroy {
     isMyModalMain: boolean;
-    isMyModalMain$: Observable<any>;
     storeId: string = 'my-menu-layout';
     bsModalRef: BsModalRef;
     private subscriptionList: Subscription[];
@@ -22,7 +26,6 @@ export class PageLayoutComponent implements OnDestroy {
         private store: Store<any>
     ) {
         this.subscriptionList = [];
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -36,16 +39,11 @@ export class PageLayoutComponent implements OnDestroy {
 
     @ViewChild(ModalMypageMainComponent) myMain: ModalMypageMainComponent;
 
-    observableInit() {
-        console.info('[CommonLayoutSideMenuService > observableInit]');
-        this.isMyModalMain$ = this.store
-            .pipe(select(commonLayoutSelectors.getSelectId([this.storeId])));
-    }
-
     subscribeInit() {
         console.info('[CommonLayoutSideMenuService > subscribeInit]');
         this.subscriptionList.push(
-            this.isMyModalMain$
+            this.store
+                .select(commonLayoutSelectors.getSelectId([this.storeId]))
                 .subscribe(
                     (ev: any) => {
                         console.info('[CommonLayoutSideMenuService > subscribeInit]', ev);
@@ -70,6 +68,4 @@ export class PageLayoutComponent implements OnDestroy {
             commonLayout: $obj
         }));
     }
-
-
 }

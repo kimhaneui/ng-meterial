@@ -2,7 +2,7 @@
     <ng-container *ngIf="this.dataModel.flight.length > 0">
         <div *ngFor="let item of viewModel.recentList.flight; index as index;" class="round-box recent-product-item">
             <div class="product-summary">
-                <h2 class="product-title">[항공] [{{item.tripType}}] {{item.bookingname}}</h2>
+                <h2 class="product-title">[항공] [{{item.tripType}}] {{item.bookingName}}</h2>
                 <ul (click)="flightOnSearchResult($event, index)">
                     <li>
                         <span>이용일</span>

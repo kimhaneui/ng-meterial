@@ -1,19 +1,27 @@
 import { Component, OnInit, Inject, PLATFORM_ID, ElementRef, ViewChild } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
-import { Store, select } from '@ngrx/store';
+import { Observable, Subscription } from 'rxjs';
+
+import { Store } from '@ngrx/store';
+
+import { clearMyModalCalendars } from 'src/app/store/my-common/my-modal-calendar/my-modal-calendar.actions';
+import { upsertMyReservationList } from 'src/app/store/my-reservation/my-reservation-list/my-reservation-list.actions';
+
 import * as myModalCalendarSelectors from '../../../../store/my-common/my-modal-calendar/my-modal-calendar.selectors';
+
 import { TranslateService } from '@ngx-translate/core';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 
-import { takeWhile } from 'rxjs/operators';
-import { Observable, Subscription } from 'rxjs';
-import { clearMyModalCalendars } from 'src/app/store/my-common/my-modal-calendar/my-modal-calendar.actions';
-import { upsertMyReservationList } from 'src/app/store/my-reservation/my-reservation-list/my-reservation-list.actions';
 import * as moment from 'moment';
-import { StoreCategoryTypes } from '../../../../common-source/enums/store-category-types.enum';
 import * as _ from 'lodash';
+
 import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { StoreCategoryTypes } from '../../../../common-source/enums/store-category-types.enum';
+
+import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 import { CommonModalCalendarComponent } from '@/app/common-source/modal-components/common-modal-calendar/common-modal-calendar.component';
 
 @Component({
@@ -22,8 +30,8 @@ import { CommonModalCalendarComponent } from '@/app/common-source/modal-componen
     styleUrls: ['./date-search.component.scss']
 })
 export class DateSearchComponent extends BaseChildComponent implements OnInit {
+    @ViewChild('chkId') chkId: ElementRef;
     dateForm: FormGroup; // 생성된 폼 저장
-    modalCalendar$: Observable<any>; // 캘린더
     rxAlive: boolean = true;
     bsModalRef: BsModalRef;
     foldingKey: boolean = false;
@@ -47,15 +55,11 @@ export class DateSearchComponent extends BaseChildComponent implements OnInit {
         this.subscriptionList = [];
     }
 
-    @ViewChild('chkId') chkId: ElementRef;
-
     ngOnInit(): void {
         super.ngOnInit();
         this.storeMyCommonInit(); // store > my-common 초기화
         this.dateFormInit(); // 폼 초기화
-        this.observableInit();  // 옵져버블 초기화
         this.subscribeInit(); // 서브스크라이브 초기화
-
     }
 
     vmInit() {
@@ -68,18 +72,10 @@ export class DateSearchComponent extends BaseChildComponent implements OnInit {
         );
     }
 
-    // 옵져버블 초기화
-    observableInit() {
-        // 캘린더
-        this.modalCalendar$ = this.store.pipe(
-            select(myModalCalendarSelectors.getSelectId(['my-main']))
-        );
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.modalCalendar$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(myModalCalendarSelectors.getSelectId(['my-main']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalCalendar$ > subscribe]', ev);
@@ -196,16 +192,10 @@ export class DateSearchComponent extends BaseChildComponent implements OnInit {
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
         initialState.step = $tgNum;
         initialState.selectList = _.slice(initialState.selectList, 0, $tgNum);
-        this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...ConfigInfo });
     }
 
     // 데이터 추가 | 업데이트 action => key 값을 확인

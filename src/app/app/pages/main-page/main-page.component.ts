@@ -1,11 +1,10 @@
-import { AfterViewInit, Component, Inject, OnInit, PLATFORM_ID, ViewEncapsulation, OnDestroy } from '@angular/core';
+import { Component, Inject, OnInit, PLATFORM_ID, ViewEncapsulation, OnDestroy } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { deleteCommonUserInfo, upsertCommonUserInfo } from '../../store/common/common-user-info/common-user-info.actions';
 
@@ -46,7 +45,6 @@ export class MainPageComponent extends BasePageComponent implements OnInit, OnDe
 
     userInfo: any;
     traveler: any;
-    commonUserInfo$: any;
 
     public mainMenuParams: MainMenuParams[];
     public recommendMenuParams: RecommendMenuParams[];
@@ -85,10 +83,7 @@ export class MainPageComponent extends BasePageComponent implements OnInit, OnDe
         super.ngOnInit();
         this.headerInit();
         this.setBodyClass('open');
-
         await this.checkedLogin();
-
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -102,16 +97,11 @@ export class MainPageComponent extends BasePageComponent implements OnInit, OnDe
         );
     }
 
-    observableInit() {
-        this.commonUserInfo$ = this.store
-            .pipe(select(commonUserInfoSelectors.getSelectId(['commonUserInfo'])));
-    }
-
     subscribeInit() {
         console.info('[subscribeInit]');
         this.subscriptionList.push(
-            this.commonUserInfo$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(commonUserInfoSelectors.getSelectId(['commonUserInfo']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[ev]', ev);
@@ -163,7 +153,7 @@ export class MainPageComponent extends BasePageComponent implements OnInit, OnDe
                         }
                     })
                     .catch((err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     });
 
                 console.info('[2 travelerRes]', travelerRes);

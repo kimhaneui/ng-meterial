@@ -9,16 +9,16 @@
     </div>
     <!-- modal contents -->
     <div class="modal-contents">
-        <form [formGroup]="mainForm" (ngSubmit)="onSubmit(mainForm)" novalidate #f="ngForm">
+        <form [formGroup]="mainForm" novalidate #f="ngForm">
             <div class="page-contents-type2 fixed-btn-footer">
                 <div class="row-group mb30">
 
                     <div class="row mt0">
                         <h2 class="row-title">문의</h2>
                         <div class="select-box line">
-                            <select formControlName="postCategoryCode" (change)="changeCategory($event)">
+                            <select formControlName="consultingCategoryCode" (change)="changeCategory($event)">
                                 <option value="" selected>선택하세요</option>
-                                <option [value]="item.code" *ngFor="let item of postCategoryCode">{{item.name}}</option>
+                                <option [value]="item.code" *ngFor="let item of consultingCategoryCode">{{item.name}}</option>
                             </select>
                         </div>
                     </div>
@@ -26,18 +26,18 @@
                     <div class="row">
                         <h2 class="row-title">예약번호</h2>
                         <div class="select-box line">
-                            <select formControlName="bookingItemCode" required [attr.disabled]="mainForm?.controls.postCategoryCode.value? null : true">
+                            <select formControlName="bookingItemCode" required [attr.disabled]="mainForm?.controls.consultingCategoryCode.value? null : true">
                                 <option value="" selected>선택하세요</option>
-                                <option [value]="code.items[0].bookingItemCode" *ngFor="let code of viewModel.list">{{code.bookingName}}</option>
+                                <option [value]="code.items[0].bookingItemCode" *ngFor="let code of viewModel.list">{{code.items[0].bookingItemCode}}</option>
                             </select>
                         </div>
                     </div>
                     <div class="row">
                         <h2 class="row-title">상담 분류</h2>
                         <div class="select-box line">
-                            <select formControlName="boardMasterSeq" required [attr.disabled]="mainForm?.controls.bookingItemCode.value? null : true">
+                            <select formControlName="consultingTypeCode" required [attr.disabled]="mainForm?.controls.bookingItemCode.value? null : true">
                                 <option value="" selected>선택하세요</option>
-                                <option [value]="item.code" *ngFor="let item of boardMaster">{{item.name}}</option>
+                                <option [value]="item.detail" *ngFor="let item of convertedList">{{item.name}}</option>
                             </select>
                         </div>
                     </div>
@@ -95,7 +95,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div *ngIf="false" class="row">
                         <h2 class="row-title">상담 제목</h2>
                         <div class="input line">
                             <input type="text" formControlName="questionTitle" placeholder="상담 제목을 입력해 주세요">
@@ -105,6 +105,25 @@
                         <h2 class="row-title">상담 내용</h2>
                         <div class="textarea line">
                             <textarea formControlName="questionDetail" cols="30" rows="10" placeholder="상담 내용을 입력해 주세요"></textarea>
+                        </div>
+                    </div>
+                    <div class="row mt10">
+                        <div class="input-file line">
+                            <div class="file-name">
+                                <span *ngIf="fileName === ''" class="text place-holder">파일을 선택하세요</span>
+                                <span *ngIf="fileName !== ''" class="text">{{fileName}}</span>
+                                <a (click)="deleteFile()" class="icon sm input-delete2">삭제</a>
+                            </div>
+                            <!-- 파일 선택 버튼을 눌러 파일을 선택하면 파일 이름이 .text 에 들어가고 삭제 버튼을 누르면 파일이 날라간다. -->
+                            <label class="input-file-label">
+                                파일 선택 <input type="file" accept="image/*" (change)="onFileChange(fileInput.files)" #fileInput class="file-hidden">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="btn-group both">
+                            <button (click)="addClick()" class="btn lg dash-line" role="button"><span class="icon sm plus3">추가</span></button>
+                            <button (click)="deleteClick()" class="btn lg dash-line" role="button"><span class="icon sm minus3">삭제</span></button>
                         </div>
                     </div>
                 </div>

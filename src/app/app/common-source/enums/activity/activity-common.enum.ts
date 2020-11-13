@@ -10,4 +10,5 @@ export enum ActivityCommon {
     PAGE_BOOKING_COMPLETE = '/activity-booking-complete',
 
     IITEM_CATEGORY_CODE = 'IC04',
+    ITEM_RESERVE_CODE = '3',
 }

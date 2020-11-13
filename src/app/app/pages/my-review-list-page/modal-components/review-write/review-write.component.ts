@@ -1,5 +1,9 @@
 import { Component, OnInit } from '@angular/core';
+
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { ReviewWriteCompleteComponent } from '../review-write-complete/review-write-complete.component';
 
 @Component({
@@ -26,15 +30,8 @@ export class ReviewWriteComponent implements OnInit {
     }
     reviewComplete() {
         this.modalClose();
-        const initialState = {
-
-        };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(ReviewWriteCompleteComponent, { initialState, ...configInfo });
+        const initialState = {};
+        this.bsModalService.show(ReviewWriteCompleteComponent, { initialState, ...ConfigInfo });
     }
     onSelectFile(event) {
         if (event.target.files && event.target.files[0]) {

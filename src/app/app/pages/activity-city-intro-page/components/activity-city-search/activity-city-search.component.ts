@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription, combineLatest } from 'rxjs';
+import { Subscription, combineLatest } from 'rxjs';
 import { take, distinct } from 'rxjs/operators';
 
 import { select, Store } from '@ngrx/store';
@@ -18,12 +18,14 @@ import * as qs from 'qs';
 import { environment } from '@/environments/environment';
 
 import { ViewModelSet, ViewModel, ViewModelCurrencySet, ViewModelPlugSet, ViewModeltimeSet, ViewModelWeatherSet, ViewModelCategorySet, ViewModelCategory } from './models/activity-city-search.model';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { ActivityCommon } from '@/app/common-source/enums/activity/activity-common.enum';
+import { ActivityStore } from '@/app/common-source/enums/activity/activity-store.enum';
+import { ActivitySearch } from '@/app/common-source/enums/activity/activity-search.enum';
+import { DestinationStore } from '@/app/common-source/enums/destination/destination-store.enum';
 
 import { BaseChildComponent } from '../../../base-page/components/base-child/base-child.component';
-import { ActivityCommon } from '@/app/common-source/enums/activity/activity-common.enum';
-import { ActivityInput } from '@/app/common-source/enums/activity/activity-input.enum';
-import { ActivityStore } from '@/app/common-source/enums/activity/activity-store.enum';
-
 import { ActivityModalCityInformationComponent } from '../../modal-components/activity-modal-city-information/activity-modal-city-information.component';
 import { ModalDestinationComponent } from '@/app/common-source/modal-components/modal-destination/modal-destination.component';
 
@@ -35,7 +37,6 @@ import { ModalDestinationComponent } from '@/app/common-source/modal-components/
 export class ActivityCitySearchComponent extends BaseChildComponent implements OnInit, OnDestroy {
     public viewModel: ViewModel;
     private dataModel: any;
-    private observableList: any;
     private subscribeList: Subscription[];
 
     constructor(
@@ -77,37 +78,8 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
             translate: {},
             modal: {},
         };
-        this.observableList = {
-            modalDestinationSearch$: null as Observable<any>,
-            activityCityRq$: null as Observable<any>,
-            activityCityRs$: null as Observable<any>,
-            activityCityName$: null as Observable<any>,
-            translate$: null as Observable<any>
-        };
         this.subscribeList = [];
-        this.observableInit(); // 옵져버블 초기화
         this.subscribeInit(); // 서브스크라이브 초기화
-    }
-
-    /**
-     * observableInit
-     * 감시 초기화
-     */
-    private observableInit(): void {
-        this.observableList = {
-            modalDestinationSearch$: this.store
-                .pipe(select(activityModalDestinationSelectors.getSelectId(['search']))),
-            activityCityRq$: this.store
-                .pipe(select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_RQ))),
-            activityCityRs$: this.store
-                .pipe(select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_RS))),
-            activityCityName$: this.store
-                .pipe(select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_CITYNAME))),
-            translate$: this.translateService.getTranslation(
-                this.translateService.getDefaultLang()
-            )
-                .pipe(take(1))
-        };
     }
 
     /**
@@ -117,10 +89,16 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
     private subscribeInit(): void {
         this.subscribeList = [
             combineLatest(
-                this.observableList.activityCityRq$,
-                this.observableList.activityCityRs$,
-                this.observableList.activityCityName$,
-                this.observableList.translate$
+                this.store
+                    .select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_RQ)),
+                this.store
+                    .select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_RS)),
+                this.store
+                    .select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_CITYNAME)),
+                this.translateService.getTranslation(
+                    this.translateService.getDefaultLang()
+                )
+                    .pipe(take(1))
             )
                 .subscribe(
                     ([res1, res2, res3, res4]): void => {
@@ -139,8 +117,11 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
                         }
                     }
                 ),
-            this.observableList.modalDestinationSearch$
-                .pipe(distinct((item: any) => item && item.val))
+            this.store
+                .pipe(
+                    select(activityModalDestinationSelectors.getSelectId([DestinationStore.STORE_ACTIVITY])),
+                    distinct((item: any) => item && item.val)
+                )
                 .subscribe(
                     (item: any): void => {
                         if (item) {
@@ -196,10 +177,10 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
     private setDestinationSearch(): void {
         this.dataModel.modal.searchType = this.dataModel.modal.type; // INPUT : 검색어 입력, CITY : 도시 선택, CATEGORY : 카테고리 선택, DETAIL : 상품 선택.
 
-        if (this.dataModel.modal.type === ActivityInput.SEARCH_TYPE_CITY) {
+        if (this.dataModel.modal.type === ActivitySearch.SEARCH_TYPE_CITY) {
             this.dataModel.modal.cityCode = this.dataModel.modal.val;
             this.dataModel.modal.cityName = this.dataModel.modal.name;
-        } else if (this.dataModel.modal.type === ActivityInput.SEARCH_TYPE_DETAIL) {
+        } else if (this.dataModel.modal.type === ActivitySearch.SEARCH_TYPE_DETAIL) {
             this.dataModel.modal.detailId = Number(this.dataModel.modal.val);
         }
 
@@ -216,18 +197,7 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
         event && event.preventDefault();
 
         const initialState: any = {
-            storeId: 'search',
-            majorDestinationRq: { // 주요도시 API RQ
-                rq: {
-                    currency: 'KRW', // TODO - user setting
-                    language: 'KO', // TODO - user setting
-                    stationTypeCode: environment.STATION_CODE,
-                    condition: {
-                        itemCategoryCode: ActivityCommon.IITEM_CATEGORY_CODE,
-                        compCode: environment.COMP_CODE
-                    }
-                }
-            },
+            storeId: DestinationStore.STORE_ACTIVITY,
             destinationRq: { // 목적지검색 API RQ
                 rq: {
                     currency: 'KRW', // TODO - user setting
@@ -243,13 +213,7 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.viewModel.bsModalRef = this.bsModalService.show(ModalDestinationComponent, { initialState, ...configInfo });
+        this.viewModel.bsModalRef = this.bsModalService.show(ModalDestinationComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -265,16 +229,7 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
             storeId: 'activity-modal-city-information'
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.viewModel.bsModalCityInfoRef = this.bsModalService.show(
-            ActivityModalCityInformationComponent,
-            { initialState, ...configInfo }
-        );
+        this.viewModel.bsModalCityInfoRef = this.bsModalService.show(ActivityModalCityInformationComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -284,9 +239,9 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
     public onGoCategorySearchClick(event: any, index: number) {
         event && event.preventDefault();
 
-        console.log(ActivityInput.SEARCH_TYPE_CATEGORY);
+        console.log(ActivitySearch.SEARCH_TYPE_CATEGORY);
 
-        this.dataModel.modal.searchType = ActivityInput.SEARCH_TYPE_CATEGORY;
+        this.dataModel.modal.searchType = ActivitySearch.SEARCH_TYPE_CATEGORY;
         this.dataModel.modal.categoryCode = this.viewModel.categoryList[index].code;
 
         if (this.viewModel.categoryList[index].code === 'ALL') {
@@ -303,7 +258,7 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
      * 팝업 닫기
      */
     private closeAllModals(): void {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -321,7 +276,7 @@ export class ActivityCitySearchComponent extends BaseChildComponent implements O
         let rqCondition = {};
         let tmpPath = '';
 
-        if (this.dataModel.modal.searchType === ActivityInput.SEARCH_TYPE_DETAIL) {
+        if (this.dataModel.modal.searchType === ActivitySearch.SEARCH_TYPE_DETAIL) {
             if (!this.dataModel.modal.detailId) { // Defensive coding
                 return;
             }

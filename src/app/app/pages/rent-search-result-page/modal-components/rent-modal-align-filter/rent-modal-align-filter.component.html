@@ -17,11 +17,8 @@
 
                     <div *ngFor="let sortOrderItem of vm.sortOrderList; index as i;" class="item-row col">
                         <div class="left">
-                            <label class="radio" >
-                                <input type="radio" class="radio-control-input"
-                                       [value]="sortOrderItem.val"
-                                       [formControlName]="'sortOrder'"
-                                       name="sortOrder"  >
+                            <label class="radio">
+                                <input type="radio" class="radio-control-input" [value]="sortOrderItem.val" [formControlName]="'sortOrder'" name="sortOrder">
                                 <span class="radio-control-text">{{sortOrderItem.name}}</span>
                             </label>
                         </div>

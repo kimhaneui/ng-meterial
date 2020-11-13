@@ -1,10 +1,15 @@
 import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject, Input } from '@angular/core';
+import { Subscription } from 'rxjs';
+
 import { Store } from '@ngrx/store';
-import { Observable, Subscription } from 'rxjs';
-import * as _ from 'lodash';
-import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
+
 import { upsertAirtelModalTravelerOption } from 'src/app/store/airtel-common/airtel-modal-traveler-option/airtel-modal-traveler-option.actions';
+
+import * as _ from 'lodash';
+
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+
+import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 import { AirtelModalChildrenInformationComponent } from '../airtel-modal-children-information/airtel-modal-children-information.component';
 
 @Component({
@@ -16,8 +21,6 @@ export class AirtelModalTravelerOptionComponent extends BaseChildComponent imple
     @Input() selectedOption: any;
 
     storeModel: any;
-
-    modalTravelerOption$: Observable<any>;  // 좌석등급, 인원 수
 
     travelerOptionSub: Subscription;        // 좌석등급, 인원 수
 

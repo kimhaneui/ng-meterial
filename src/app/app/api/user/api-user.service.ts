@@ -1,44 +1,27 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { environment } from '@/environments/environment';
+import { Observable } from 'rxjs';
+
+import { RestCallService } from '../rest-call/rest-call.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ApiUserService {
-
-    baseUrl: String;
-
-    httpOptions = {
-        headers: new HttpHeaders({
-            'Content-Type': 'application/json;charset=UTF-8'
-        })
-    };
-
-    constructor(private http: HttpClient) {
-        this.baseUrl = environment.API_URL;
-    }
+    constructor(
+        private restCallS: RestCallService
+    ) { }
 
     /**
      * 로그인
      */
-    POST_USER_LOGIN($body?: any, $opt?: any) {
-        return this.httpPost('/user/login', $body, $opt);
+    POST_USER_LOGIN(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/user/login', body, opt);
     }
 
     /**
      * 사용자 정보
      */
-    POST_USER_GETINFO($body?: any, $opt?: any) {
-        return this.httpPost('/user/get-info', $body, $opt);
-    }
-
-
-    httpPost($url, $body?: any, $opt?: any) {
-        const url = this.baseUrl + $url;
-        const body = $body || {};
-        const options = { ...this.httpOptions, ...$opt };
-
-        return this.http.post(url, body, options);
+    POST_USER_GETINFO(body?: any, opt?: any): Observable<any> {
+        return this.restCallS.httpPost('/user/get-info', body, opt);
     }
 }

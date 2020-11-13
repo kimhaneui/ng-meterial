@@ -131,7 +131,7 @@ export class HotelBasketListComponent extends BaseChildComponent implements OnIn
                 }
             })
             .catch((err: any) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
 
 

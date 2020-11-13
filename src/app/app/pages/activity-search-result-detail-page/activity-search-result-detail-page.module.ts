@@ -28,6 +28,8 @@ import * as translationEn from 'src/assets/i18n/activity-search-result-detail-pa
 import { ActivitySearchResultDetailPageComponent } from './activity-search-result-detail-page.component';
 import { ActivityModalReviewComponent } from './modal-components/activity-modal-review/activity-modal-review.component';
 import { ActivityModalProductQnaComponent } from './modal-components/activity-modal-product-qna/activity-modal-product-qna.component';
+import { ActivityModalQnaWriteComponent } from './modal-components/activity-modal-qna-write/activity-modal-qna-write.component';
+
 
 /**
  * 필수 디렉티브
@@ -61,7 +63,9 @@ export function JSONModuleLoaderFactory(http: HttpClient, platform) {
     declarations: [
         ActivitySearchResultDetailPageComponent,
         ActivityModalReviewComponent,
-        ActivityModalProductQnaComponent
+        ActivityModalProductQnaComponent,
+        ActivityModalQnaWriteComponent,
+
     ],
     providers: [
         JwtService
@@ -72,7 +76,6 @@ export function JSONModuleLoaderFactory(http: HttpClient, platform) {
         CommonSourceModule,
         FormsModule,
         ReactiveFormsModule,
-
         ActivitySearchResultDetailPageRoutingModule,
 
         // 다국어

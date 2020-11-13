@@ -2,7 +2,7 @@ import { Component, OnInit, ViewEncapsulation, Inject, PLATFORM_ID, OnDestroy } 
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { mergeMap } from 'rxjs/operators';
+import { concatMap } from 'rxjs/operators';
 
 import { Store } from '@ngrx/store';
 
@@ -21,15 +21,13 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 import { environment } from '@/environments/environment';
 
 import { InicisCallBack } from '@/app/common-source/models/payment/inicis-payment.model';
+import { RequestParam, RequestSet } from '@/app/common-source/models/common/condition.model';
 
-import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 import { ActivityStore } from '@/app/common-source/enums/activity/activity-store.enum';
 import { UserStore } from '@/app/common-source/enums/common/user-store.enum';
-
-import { CondisionSet, Condition } from '@/app/common-source/models/common/condition.model';
+import { MyCommon } from '@/app/common-source/enums/my/my-common.enum';
 
 import { BasePageComponent } from '../base-page/base-page.component';
-import { MyCommon } from '@/app/common-source/enums/my/my-common.enum';
 
 @Component({
     selector: 'app-activity-booking-complete-page',
@@ -126,7 +124,7 @@ export class ActivityBookingCompletePageComponent extends BasePageComponent impl
         this.subscriptionList.push(
             this.route.queryParams
                 .pipe(
-                    mergeMap(
+                    concatMap(
                         (params: InicisCallBack) => {
                             console.log('rrrroute queryParams : ', params);
                             try {
@@ -141,7 +139,7 @@ export class ActivityBookingCompletePageComponent extends BasePageComponent impl
                                 }
                             } catch (err) {
                                 console.log(err);
-                                this.alertService.showApiAlert(err);
+                                this.alertService.showApiAlert(err.error.message);
                             }
                         }
                     )
@@ -157,12 +155,12 @@ export class ActivityBookingCompletePageComponent extends BasePageComponent impl
                                 this.alertService.showApiAlert(res.errorMessage);
                             }
                         } catch (err) {
-                            this.alertService.showApiAlert(err);
+                            this.alertService.showApiAlert(err.error.message);
                         }
                     },
                     err => {
                         console.log(err);
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -170,7 +168,7 @@ export class ActivityBookingCompletePageComponent extends BasePageComponent impl
 
     private makeBookingData() {
         console.log('하하하하하 : ', this.dataModel);
-        this.dataModel.bookingRq = CondisionSet;
+        this.dataModel.bookingRq = _.cloneDeep(RequestSet);
         this.dataModel.bookingRq.transactionSetId = this.dataModel.transactionSetId;
         this.dataModel.bookingRq.condition = this.dataModel.beforeBookingRq.condition;
         this.dataModel.bookingRq.condition.bookingCode = this.dataModel.beforeBookingRs.bookingCode;
@@ -218,7 +216,7 @@ export class ActivityBookingCompletePageComponent extends BasePageComponent impl
     detailLink(event: MouseEvent) {
         event && event.preventDefault();
 
-        const rq: Condition = CondisionSet;
+        const rq: RequestParam = _.cloneDeep(RequestSet);
         rq.condition = { userNo: this.dataModel.user.userNo };
         const path = MyCommon.PAGE_RESERVATION_LIST + qs.stringify(rq);
         this.router.navigate([path]);
@@ -230,8 +228,8 @@ export class ActivityBookingCompletePageComponent extends BasePageComponent impl
     listLink(event: MouseEvent) {
         event && event.preventDefault();
 
-        const rq: Condition = CondisionSet;
-        rq.condition = { userNo: this.viewModel.bookingItemCode };
+        const rq: RequestParam = _.cloneDeep(RequestSet);
+        rq.condition = { userNo: this.dataModel.user.userNo, bookingItemCode: this.viewModel.bookingItemCode };
         const path = MyCommon.PAGE_RESERVATION_ACTIVITY_DETAIL + qs.stringify(rq);
         this.router.navigate([path]);
     }

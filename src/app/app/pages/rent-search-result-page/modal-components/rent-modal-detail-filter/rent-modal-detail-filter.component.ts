@@ -2,10 +2,9 @@ import { Component, ElementRef, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@
 import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { clearRentModalCalendars } from '@/app/store/rent-common/rent-modal-calendar/rent-modal-calendar.actions';
 import { clearRentModalDestinations } from '@/app/store/rent-common/rent-modal-destination/rent-modal-destination.actions';
@@ -19,13 +18,7 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import * as _ from 'lodash';
 import * as qs from 'qs';
 
-import {
-    VehicleVendorsCheckBoxParam,
-    VehicleTypesCheckBoxParam,
-    PassengerCountsCheckBoxParam,
-    MileagesCheckBoxParam,
-    PickupLocationsCheckBoxParam
-} from './models/rent-modal-detail-filter.model';
+import { VehicleVendorsCheckBoxParam, VehicleTypesCheckBoxParam, PassengerCountsCheckBoxParam, MileagesCheckBoxParam, PickupLocationsCheckBoxParam } from './models/rent-modal-detail-filter.model';
 
 import { BaseChildComponent } from '../../../base-page/components/base-child/base-child.component';
 
@@ -55,9 +48,6 @@ export class RentModalDetailFilterComponent extends BaseChildComponent implement
     };
 
     rxAlive: boolean = true;
-    rentListRq$: Observable<any>; // 렌터카 검색 request
-    rentListRs$: Observable<any>; // 렌터카 검색 결과
-
     loadingBool: boolean = false;
     isListType: boolean;
     transactionSetId: any;
@@ -83,7 +73,6 @@ export class RentModalDetailFilterComponent extends BaseChildComponent implement
         super.ngOnInit();
         const bodyEl = document.getElementsByTagName('body')[0];
         bodyEl.classList.add('overflow-none');
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -98,17 +87,10 @@ export class RentModalDetailFilterComponent extends BaseChildComponent implement
         );
     }
 
-    observableInit() {
-        this.rentListRq$ = this.store
-            .pipe(select(rentSearchResultPageSelectors.getSelectId('rent-list-rq-info')));
-        this.rentListRs$ = this.store
-            .pipe(select(rentSearchResultPageSelectors.getSelectId('rent-list-rs')));
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.rentListRq$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(rentSearchResultPageSelectors.getSelectId('rent-list-rq-info'))
                 .subscribe(
                     (ev: any) => {
                         console.info('[rentListRq$ > subscribe]', ev);
@@ -124,8 +106,8 @@ export class RentModalDetailFilterComponent extends BaseChildComponent implement
         );
 
         this.subscriptionList.push(
-            this.rentListRs$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(rentSearchResultPageSelectors.getSelectId('rent-list-rs'))
                 .subscribe(
                     (ev: any) => {
                         console.info('[rentListRs$ > subscribe]', ev);
@@ -352,7 +334,7 @@ export class RentModalDetailFilterComponent extends BaseChildComponent implement
         this.rqInfo.isListType = this.isListType;
 
         Object.entries(this.rqInfo.rq.condition.filter).map(
-            ([key, item]) => {
+            ([, item]) => {
                 const originItem: any = item as any;
                 if (
                     (this.rqInfo.detailUpdate !== 'true') &&
@@ -424,12 +406,10 @@ export class RentModalDetailFilterComponent extends BaseChildComponent implement
                 if (event.target.checked) {
                     formArray.push(new FormControl(event.target.value));
                 } else {
-                    let itemValue = '';
                     formArray.controls.map(
                         (item: FormControl, index: number): void => {
                             if (String(item.value) === String(event.target.value)) {
                                 formArray.removeAt(index);
-                                itemValue = item.value;
                             }
                         }
                     );

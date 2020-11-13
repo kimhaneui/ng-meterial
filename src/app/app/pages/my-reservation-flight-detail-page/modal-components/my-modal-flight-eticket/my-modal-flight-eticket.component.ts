@@ -56,7 +56,7 @@ export class MyModalFlightEticketComponent extends BaseChildComponent implements
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
         console.info('[3. API 호출 끝]');
     }

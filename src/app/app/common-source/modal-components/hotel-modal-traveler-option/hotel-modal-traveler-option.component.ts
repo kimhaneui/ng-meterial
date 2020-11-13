@@ -1,10 +1,9 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
-import { select, Store } from '@ngrx/store';
-import { ActivatedRoute, Router } from '@angular/router';
-import { DOCUMENT, Location } from '@angular/common';
-import { takeWhile, take } from 'rxjs/operators';
+import { Store } from '@ngrx/store';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
-import { Observable, Subscription } from 'rxjs';
 import * as _ from 'lodash';
 
 import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
@@ -14,6 +13,8 @@ import * as hotelSearchResultPageSelectors from 'src/app/store/hotel-search-resu
 import * as hotelSearchRoomtypePageSelectors from 'src/app/store/hotel-search-roomtype-page/hotel-search-roomtype/hotel-search-roomtype.selectors';
 
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+import { ConfigInfo } from '../../models/common/modal.model';
+
 import { HotelModalChildrenInformationComponent } from '../hotel-modal-children-information/hotel-modal-children-information.component';
 
 @Component({
@@ -44,10 +45,6 @@ export class HotelModalTravelerOptionComponent extends BaseChildComponent implem
     hotelRoomtypeRq: any;
     hotelTravelerOpt: any;
     modalTravelerOpt: any;
-
-    hotelListRq$: Observable<any>;
-    hotelRoomtypeRq$: Observable<any>;
-    hotelTravelerOpt$: Observable<any>;  // 좌석등급, 인원 수
 
     vm: any = {
         id: 'hotelTravelerOption',
@@ -80,7 +77,7 @@ export class HotelModalTravelerOptionComponent extends BaseChildComponent implem
         private route: ActivatedRoute,
         private store: Store<any>,
         private bsModalService: BsModalService,
-        public bsModalRef: BsModalRef
+        private bsModalRef: BsModalRef
     ) {
         super(platformId);
         this.subscriptionList = [];
@@ -106,7 +103,6 @@ export class HotelModalTravelerOptionComponent extends BaseChildComponent implem
                 )
         );
 
-        this.observableInit();
         this.subscribeInit();
         this.setFilterData();
     }
@@ -126,29 +122,11 @@ export class HotelModalTravelerOptionComponent extends BaseChildComponent implem
         );
     }
 
-    /**
-     * 옵저버블 초기화
-     */
-    observableInit() {
-
-        if (this.isRoomtype) {
-            this.hotelRoomtypeRq$ = this.store
-                .pipe(select(hotelSearchRoomtypePageSelectors.getSelectId('hotel-roomtype-rq-info')));
-        } else {
-            this.hotelListRq$ = this.store
-                .pipe(select(hotelSearchResultPageSelectors.getSelectId('hotel-list-rq-info')));
-        }
-        this.hotelTravelerOpt$ = this.store.select(
-            travelerOptionSelector.getSelectId(['hotelTravelerOption'])
-        );
-    }
-
-
     subscribeInit() {
         if (this.isRoomtype) {
             this.subscriptionList.push(
-                this.hotelRoomtypeRq$
-                    .pipe(takeWhile(() => this.rxAlive))
+                this.store
+                    .select(hotelSearchRoomtypePageSelectors.getSelectId(['hotel-roomtype-rq-info']))
                     .subscribe(
                         (ev: any) => {
                             console.info('[hotelRoomtyRq observableInit > subscribe]', ev);
@@ -160,8 +138,8 @@ export class HotelModalTravelerOptionComponent extends BaseChildComponent implem
             );
         } else {
             this.subscriptionList.push(
-                this.hotelListRq$
-                    .pipe(takeWhile(() => this.rxAlive))
+                this.store
+                    .select(hotelSearchResultPageSelectors.getSelectId(['hotel-list-rq-info']))
                     .subscribe(
                         (ev: any) => {
                             console.info('[hotelListRq observableInit > subscribe]', ev);
@@ -174,8 +152,8 @@ export class HotelModalTravelerOptionComponent extends BaseChildComponent implem
         }
 
         this.subscriptionList.push(
-            this.hotelTravelerOpt$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(travelerOptionSelector.getSelectId(['hotelTravelerOption']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelTravelerOpt$ observableInit > subscribe]', ev);
@@ -297,13 +275,8 @@ export class HotelModalTravelerOptionComponent extends BaseChildComponent implem
     move() {
         console.info('[호텔 메인 >> 상세 검색 모달]');
         // 모달 전달 데이터
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
 
-        this.bsModalService.show(HotelModalChildrenInformationComponent, { ...configInfo });
+        this.bsModalService.show(HotelModalChildrenInformationComponent, { ...ConfigInfo });
     }
 
     // 인원 변경

@@ -18,6 +18,8 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 
 import { environment } from '@/environments/environment';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
 import { BasePageComponent } from '../base-page/base-page.component';
@@ -26,7 +28,6 @@ import { MyModalHotelInvoiceComponent } from './modal-components/my-modal-hotel-
 import { MyModalHotelReceiptComponent } from './modal-components/my-modal-hotel-receipt/my-modal-hotel-receipt.component';
 import { MyModalHotelBookerModifyComponent } from './modal-components/my-modal-hotel-booker-modify/my-modal-hotel-booker-modify.component';
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
-import { MyModalFlightBookerEditComponent } from '../my-reservation-flight-detail-page/modal-components/my-modal-flight-booker-edit/my-modal-flight-booker-edit.component';
 
 @Component({
     selector: 'app-my-reservation-hotel-detail-page',
@@ -59,11 +60,6 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
     roomType: any;
     guestNumInfo: any;
     comService: any;
-
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
 
     private subscriptionList: Subscription[];
     hotelDetail: any;
@@ -125,7 +121,7 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -158,7 +154,7 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -249,7 +245,7 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -286,10 +282,10 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
         const initialState: any = {
             rq: rqInfo
         };
-        this.bsModalRef = this.bsModalService.show(MyModalHotelBookerModifyComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalHotelBookerModifyComponent, { initialState, ...ConfigInfo });
     }
 
-    // // 여행자보험 모달
+    // 여행자보험 모달
     // openTravelInsu() {
     //     const initialState = {
     //         list: [
@@ -297,11 +293,7 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalHotelTravelInsuComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalHotelTravelInsuComponent, { initialState, ...ConfigInfo });
     // }
 
     // 호텔 바우처 모달
@@ -322,7 +314,7 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
         const initialState: any = {
             rq: rqInfo
         };
-        this.bsModalRef = this.bsModalService.show(MyModalHotelVoucherComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalHotelVoucherComponent, { initialState, ...ConfigInfo });
     }
 
     // 호텔 인보이스 모달
@@ -345,7 +337,7 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
             rq: rqInfo
         };
 
-        this.bsModalRef = this.bsModalService.show(MyModalHotelInvoiceComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalHotelInvoiceComponent, { initialState, ...ConfigInfo });
     }
 
     // 호텔 영수증 모달
@@ -356,11 +348,7 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
             ],
             title: 'Modal with component'
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: true
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalHotelReceiptComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalHotelReceiptComponent, { initialState, ...ConfigInfo });
     }
 
     // openOneonon() {
@@ -416,11 +404,6 @@ export class MyReservationHotelDetailPageComponent extends BasePageComponent imp
                 fun: () => { },
             };
         }
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false,
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo, });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 }

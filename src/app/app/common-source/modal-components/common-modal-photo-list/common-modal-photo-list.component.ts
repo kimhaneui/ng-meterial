@@ -2,6 +2,8 @@ import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core
 import * as _ from 'lodash';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 
+import { ConfigInfo } from '../../models/common/modal.model';
+
 //Component
 import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 import { CommonModalPhotoDetailComponent } from '../common-modal-photo-detail/common-modal-photo-detail.component';
@@ -72,12 +74,10 @@ export class CommonModalPhotoListComponent extends BaseChildComponent implements
             currentSlide: idx
         };
         // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal m-ngx-slick-carousel is-img-viewer',
-            animated: false
-        };
+        const newConfigInfo = _.cloneDeep(ConfigInfo);
+        newConfigInfo.class = 'm-ngx-bootstrap-modal m-ngx-slick-carousel is-img-viewer';
 
-        this.bsModalPhotoDetailRef = this.bsModalService.show(CommonModalPhotoDetailComponent, { initialState, ...configInfo });
+        this.bsModalPhotoDetailRef = this.bsModalService.show(CommonModalPhotoDetailComponent, { initialState, ...newConfigInfo });
     }
 
 }

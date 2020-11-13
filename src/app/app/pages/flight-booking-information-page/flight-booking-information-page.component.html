@@ -1,6 +1,6 @@
 <app-common-modal-loading *ngIf="bookingLoading"></app-common-modal-loading>
 
-<div id="wrap" class="p-flight-booking-information-page">
+<div *ngIf="!bookingLoading" id="wrap" class="p-flight-booking-information-page">
     <!-- header -->
     <app-flight-header [headerType]="headerType" [headerConfig]="headerConfig"></app-flight-header>
 
@@ -235,6 +235,14 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="row">
+                                            <h5 class="row-title">국적</h5>
+                                            <div class="select-box line">
+                                                <select id="nationalityCode{{i}}" formControlName="nationalityCode" [class.valid-error]="isValidError(travelers.at(i).get('nationalityCode'))">
+                                                    <option value="KR">대한민국</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                         <div class="row auto">
                                             <div class="row-title">성별선택</div>
                                             <div [attr.data-target]="'gender'+i">
@@ -248,15 +256,29 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="row">
-                                            <h5 class="row-title">국적</h5>
-                                            <div class="select-box line">
-                                                <select id="nationalityCode{{i}}" formControlName="nationalityCode" [class.valid-error]="isValidError(travelers.at(i).get('nationalityCode'))">
-                                                    <option value="KR">대한민국</option>
-                                                </select>
+                                    </div>
+
+                                    <ng-container *ngIf="isAllDomestic">
+                                        <h4 class="contents-title2 mt20 pt20 border-dashed-top grey">할인조건</h4>
+                                        <div class="row-group">
+                                            <div class="row">
+                                                <h5 class="row-title">가는편<img src="/assets/images/airlines/{{ selectedList[0].marketingAirlineCode }}_Small.png" alt="" class="airline-logo ml10"></h5>
+                                                <div class="select-box line">
+                                                    <select>
+                                                        <option *ngFor="let item of domesticFareList[0]" [value]="item.fareCode">{{ item.codeNameLn }}</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <h5 class="row-title">오는편<img src="/assets/images/airlines/{{ selectedList[1].marketingAirlineCode }}_Small.png" alt="" class="airline-logo ml10"></h5>
+                                                <div class="select-box line">
+                                                    <select>
+                                                        <option *ngFor="let item of domesticFareList[1]" [value]="item.fareCode">{{ item.codeNameLn }}</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </ng-container>
 
                                     <ng-container *ngIf="apisNeededYn">
                                         <h4 class="contents-title2 mt20 pt20 border-dashed-top grey">여권정보</h4>

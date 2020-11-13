@@ -1,11 +1,16 @@
 import { Component, ElementRef, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
-import { BaseChildComponent } from '../../../base-page/components/base-child/base-child.component';
 import { DOCUMENT, Location } from '@angular/common';
-import { Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { Store } from '@ngrx/store';
+
+import { TranslateService } from '@ngx-translate/core';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { BaseChildComponent } from '../../../base-page/components/base-child/base-child.component';
 import { RentModalBranchofficeDetailComponent } from '../rent-modal-branchoffice-detail/rent-modal-branchoffice-detail.component';
 
 @Component({
@@ -86,12 +91,8 @@ export class RentModalBranchofficeComponent extends BaseChildComponent implement
             address: this.address
         };
         console.info('[렌터카 지정 정보 상세보기]', initialState);
-        // ngx-bootstrap configlongitude
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(RentModalBranchofficeDetailComponent, { initialState, ...configInfo });
+
+        this.bsModalService.show(RentModalBranchofficeDetailComponent, { initialState, ...ConfigInfo });
     }
 
 }

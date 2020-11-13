@@ -1,6 +1,10 @@
-import { ModalMypageMainComponent } from '@/app/layouts/page-layout/modal-components/modal-mypage-main/modal-mypage-main.component';
 import { Component, OnInit } from '@angular/core';
+
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { ModalMypageMainComponent } from '@/app/layouts/page-layout/modal-components/modal-mypage-main/modal-mypage-main.component';
 
 @Component({
     selector: 'app-review-detail',
@@ -21,14 +25,7 @@ export class ReviewDetailComponent implements OnInit {
     }
     menuClick() {
         this.modalClose();
-        const initialState = {
-
-        };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(ModalMypageMainComponent, { initialState, ...configInfo });
+        const initialState = {};
+        this.bsModalService.show(ModalMypageMainComponent, { initialState, ...ConfigInfo });
     }
 }

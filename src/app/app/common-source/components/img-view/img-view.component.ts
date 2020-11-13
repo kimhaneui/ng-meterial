@@ -1,9 +1,11 @@
 import { Component, Inject, Input, OnInit, PLATFORM_ID, ViewChild, EventEmitter, DoCheck, Output } from '@angular/core';
 
+import { TranslateService } from '@ngx-translate/core';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 import { SlickCarouselComponent } from 'ngx-slick-carousel';
 
-import { TranslateService } from '@ngx-translate/core';
+
+import { ConfigInfo } from '../../models/common/modal.model';
 
 //Component
 import { BaseChildComponent } from '@/app/pages/base-page/components/base-child/base-child.component';
@@ -162,13 +164,8 @@ export class ImgViewComponent extends BaseChildComponent implements OnInit, DoCh
             photos: $photos
         };
 
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
 
-        this.bsModalRef = this.bsModalService.show(CommonModalPhotoListComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(CommonModalPhotoListComponent, { initialState, ...ConfigInfo });
     }
 }

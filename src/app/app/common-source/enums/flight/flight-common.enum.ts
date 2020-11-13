@@ -10,4 +10,6 @@ export enum FlightCommon {
     PAGE_BOOKING_COMPLETE = '/flight-booking-complete',
 
     IITEM_CATEGORY_CODE = 'IC01',
+    //항공:1, 호텔:2, 액티비티:3, 렌터카:4, 묶음할인:5
+    ITEM_RESERVE_CODE = '1',
 }

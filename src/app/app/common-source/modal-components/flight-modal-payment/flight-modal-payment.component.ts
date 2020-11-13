@@ -1,9 +1,9 @@
 import { Component, OnInit, Inject, PLATFORM_ID, Input, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile, distinct } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { distinct } from 'rxjs/operators';
 
-import { Store, select } from '@ngrx/store';
+import { select, Store } from '@ngrx/store';
 
 import * as flightSearchResultSelector from 'src/app/store/flight-common/flight-search-result/flight-search-result.selectors';
 import * as commonUserInfoSelectors from 'src/app/store/common/common-user-info/common-user-info.selectors';
@@ -14,15 +14,19 @@ import * as _ from 'lodash';
 
 import { ApiFlightService } from '@/app/api/flight/api-flight.service';
 import { WebShareService } from '../../services/web-share/web-share.service';
+import { JwtService } from '@/app/common-source/services/jwt/jwt.service';
+import { ApiAlertService } from '../../services/api-alert/api-alert.service';
+
+import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '../../models/common/modal.model'
+    ;
+import { FlightStore } from '../../enums/flight/flight-store.enum';
+import { CommonStore } from '../../enums/common/common-store.enum';
 
 import { BaseChildComponent } from '@/app/pages/base-page/components/base-child/base-child.component';
 import { FlightModalPaymentDetailComponent } from '../flight-modal-payment-detail/flight-modal-payment-detail.component';
-import { JwtService } from '@/app/common-source/services/jwt/jwt.service';
-
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
-import { environment } from '@/environments/environment';
-import { ApiAlertService } from '../../services/api-alert/api-alert.service';
-import { FlightStore } from '../../enums/flight/flight-store.enum';
 
 @Component({
     selector: 'app-flight-modal-payment',
@@ -40,10 +44,6 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
     userInfo: any;
     public viewModel: any;
     private dataModel: any;
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
 
     condition: any;
     stationTypeCode: any;
@@ -102,8 +102,11 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
     private subscribeInit(): void {
         this.dataModel = {};
         this.subscriptionList = [
-            this.store.select(flightSearchResultSelector.getSelectId(FlightStore.STORE_FLIGHT_LIST_RQ))
-                .pipe(distinct((item: any) => item && item.id))
+            this.store
+                .pipe(
+                    select(flightSearchResultSelector.getSelectId(FlightStore.STORE_FLIGHT_LIST_RQ)),
+                    distinct((item: any) => item && item.id)
+                )
                 .subscribe(
                     (item: any) => {
                         if (item) {
@@ -112,8 +115,11 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
                         }
                     }
                 ),
-            this.store.select(flightSearchResultSelector.getSelectId([FlightStore.STORE_FLIGHT_LIST_RS]))
-                .pipe(distinct((item: any) => item && item.id))
+            this.store
+                .pipe(
+                    select(flightSearchResultSelector.getSelectId([FlightStore.STORE_FLIGHT_LIST_RS])),
+                    distinct((item: any) => item && item.id)
+                )
                 .subscribe(
                     (item: any) => {
                         if (item) {
@@ -127,27 +133,80 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
 
     private flightSearch(resolveData) {
         // ---------[api 호출 | 프로모션]
-        this.subscriptionList.push(
-            this.apiflightSvc.POST_FLIGHT_PROMOTION(resolveData)
-                .subscribe(
-                    (res: any) => {
-                        if (res.succeedYn) {
-                            console.info('[ 프로모션 > res.result]', res['result']);
-                            this.dataModel.promotion = _.cloneDeep(res);
-                            this.setViewModel();
-                        } else {
-                            this.alertService.showApiAlert(res.errorMessage);
+
+        let domesticFlag = true;
+        console.log(_.cloneDeep(this.dataModel.response));
+        this.dataModel.response.option.result.selected.detail.itineraries.map(
+            (itineraryItem: any) => {
+                itineraryItem.segments.map(
+                    (segItem: any) => {
+                        if (domesticFlag && (!_.isEqual(segItem.destination.countryCode, 'KR') && !_.isEqual(segItem.origin.countryCode, 'KR'))) {
+                            domesticFlag = false;
                         }
-                    },
-                    (err: any) => {
-                        this.alertService.showApiAlert(err);
                     }
-                )
+                );
+            }
         );
+        this.viewModel = { totalAmount: 0 };
+        this.dataModel.response.option.result.selected.detail.price.fare.passengerFares.map(
+            (fareItem: any) => {
+                this.viewModel.totalAmount += ((fareItem.fareAmount + fareItem.tasfAmount + fareItem.taxAmount) * fareItem.paxCount);
+            }
+        );
+
+        // 하나라도 국제선이 있을 경우 프로모션 표시
+        if (domesticFlag) {
+            this.dataModel.promotion = {
+                result: {
+                    fares: [
+                        {
+                            adultFareAmount: 0,
+                            adultTasfAmount: 0,
+                            adultTaxAmount: 0,
+                            amountSum: this.viewModel.totalAmount,
+                            designatedRouteYn: 0,
+                            fareAmountSum: 0,
+                            fareIndex: 0,
+                            fuelSurchargeAmountSum: 0,
+                            inPolicyYn: true,
+                            onewayCombineYn: false,
+                            passengerFares: [],
+                            productAmountSum: 0,
+                            promotionCardBrandCode: 'NOT',
+                            promotionCardBrandName: '없음',
+                            promotionCardCode: 'NOT',
+                            promotionCardName: '없음',
+                            promotionSeq: 0,
+                            refundableYn: true,
+                            tasfAmountSum: 0,
+                            taxAmountSum: 0,
+                        }
+                    ],
+                    lowestAmount: this.viewModel.totalAmount,
+                }
+            };
+            this.setViewModel();
+        } else {
+            this.subscriptionList.push(
+                this.apiflightSvc.POST_FLIGHT_PROMOTION(resolveData)
+                    .subscribe(
+                        (res: any) => {
+                            if (res.succeedYn) {
+                                this.dataModel.promotion = _.cloneDeep(res);
+                                this.setViewModel();
+                            } else {
+                                this.alertService.showApiAlert(res.errorMessage);
+                            }
+                        },
+                        (err: any) => {
+                            this.alertService.showApiAlert(err.error.message);
+                        }
+                    )
+            );
+        }
     }
 
     private setViewModel() {
-        console.log('어무이 시부앙 제발 쫌....', this);
         this.cardList = this.dataModel.promotion.result.fares.map(
             (item: any, index: number): any => {
                 item.lowestAmount = this.dataModel.promotion.result.lowestAmount;
@@ -198,7 +257,7 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
         //                         titleTxt: ',
         //                         closeObj:
         //                     }
-        //                     this.bsModalSvc.show(CommonModalAlertComponent, { initialState, ...this.configInfo });
+        //                     this.bsModalSvc.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
 
         //                     console.info('[예약리스트 > res]', res);
         //                     this.limitStart += this.pageCount;
@@ -211,7 +270,7 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
         // }
         //             },
         //             (error: any): void => {
-        // this.alertService.showApiAlert(error.error.errorMessage);
+        // this.alertService.showApiAlert(err.error.message);
         //             }
         //         )
         // );
@@ -220,9 +279,7 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
     commonUserInfoInit() {
         this.subscriptionList.push(
             this.store
-                .pipe(
-                    select(commonUserInfoSelectors.getSelectId('commonUserInfo')), // 스토어 ID
-                    takeWhile(() => this.rxAlive))
+                .select(commonUserInfoSelectors.getSelectId(CommonStore.COMMON_USER_INFO)) // 스토어 ID
                 .subscribe(
                     (ev) => {
                         console.info('commonUserInfo > ', ev);
@@ -285,11 +342,10 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
                                 }
                             };
 
-                            if (_.has(this.userInfo, 'emailAddress')) //로그인 개인정보 > 이메일 필수값 아님
+                            //로그인 개인정보 > 이메일 필수값 아님
+                            if (_.has(this.userInfo, 'emailAddress')) {
                                 rq.condition['receiveEmailAddress'] = this.userInfo.emailAddress;
-
-
-                            console.info('addCart > rq', rq);
+                            }
 
                             //api 실행
                             this.putBasketApi(rq);
@@ -317,7 +373,7 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
                     },
                     (err: any) => {
                         console.info('[API 호출 | 항공 장바구니 추가 > err]', err);
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -348,12 +404,8 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
                 fun: () => { }
             };
         }
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     // 장바구니 리스트
@@ -390,7 +442,7 @@ export class FlightModalPaymentComponent extends BaseChildComponent implements O
         const initialState = {
             rs: this.rs
         };
-        this.bsModalDetailRef = this.bsModalSvc.show(FlightModalPaymentDetailComponent, { initialState, ...this.configInfo });
+        this.bsModalDetailRef = this.bsModalSvc.show(FlightModalPaymentDetailComponent, { initialState, ...ConfigInfo });
     }
 
     /**

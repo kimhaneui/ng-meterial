@@ -2,15 +2,15 @@ import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy } from '@angular/core
 import { Title, Meta } from '@angular/platform-browser';
 import { Location } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { forkJoin, Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 import { TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 
-import { forkJoin, Subscription } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { upsertMyMileage } from 'src/app/store/my-mileage/my-mileage/my-mileage.actions';
 
 import * as _ from 'lodash';
-import * as moment from 'moment';
 
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 
@@ -22,16 +22,16 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 import { JwtService } from 'src/app/common-source/services/jwt/jwt.service';
 import { CommonLayoutSideMenuService } from '../../../app/common-source/services/common-layout-side-menu/common-layout-side-menu.service';
 
-import { upsertMyMileage } from 'src/app/store/my-mileage/my-mileage/my-mileage.actions';
-
 import { BoardMaster, BoardMasterList } from '@/app/common-source/models/my-qna/board-master.model';
+import { QnaTypes } from '@/app/common-source/enums/qna/qna-types.enum';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
 import { MyModalQnaWriteComponent } from './modal-components/my-modal-qna-write/my-modal-qna-write.component';
-import { MyModalQnaViewComponent } from './modal-components/my-modal-qna-view/my-modal-qna-view.component';
 import { BasePageComponent } from '../base-page/base-page.component';
 import { ActivityModalProductQnaComponent } from '../activity-search-result-detail-page/modal-components/activity-modal-product-qna/activity-modal-product-qna.component';
-
+import { RequestSet } from '@/app/common-source/models/common/condition.model';
 
 @Component({
     selector: 'app-my-qna-list-page',
@@ -66,7 +66,6 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
     bookingItemCode: any;
     travelFromDate: any;
     qnaList = [];
-    userInfoRes: any;
     photoUrl: any;
     public boardMaster: BoardMaster[];
 
@@ -77,6 +76,20 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
         distance: 2,
         throttle: 50
     };
+
+    qnaTypes = QnaTypes;
+    buttonTypes = {
+        'ALL': '전체',
+        'IC01': '항공',
+        'IC02': '호텔',
+        'IC03': '렌터카',
+        'IC04': '액티비티',
+    };
+
+    public sampleList: any;
+    public convertedList: any;
+    public typeCodeCount: any;
+    private userInfoRes: any;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
@@ -114,8 +127,6 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
                     (data: any) => {
                         this.resolveData = _.cloneDeep(data.resolveData);
 
-                        console.info('[1. route 통해 데이터 전달 받기]', data.resolveData);
-
                     }
                 )
         );
@@ -148,6 +159,8 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
 
     }
     private async initialize() {
+
+        this.selCateStr = '전체';
         this.dataModel = {
             consulting: {
                 list: []
@@ -157,29 +170,34 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
             }
         };
         this.viewModel = {
+            consulting: {
+                list: []
+            },
+            qna: {
+                list: []
+            }
         };
         this.subscriptionList = [];
         this.boardMaster = BoardMasterList;
         this.userInfoRes = await this.jwtService.getUserInfo();
 
-        // this.setBookingList();
     }
     /**
      * 페이지 초기화
      *  api 호출 (
      */
     async pageInit() {
-        console.log(this.userInfoRes, 'this.userInfoRes');
+
         this.isSearchDone = false;
-        const userInfoRes = await this.jwtService.getUserInfo();
+        this.userInfoRes = await this.jwtService.getUserInfo();
         const rqInfo =
         {
             stationTypeCode: environment.STATION_CODE,
             currency: 'KRW',
             language: 'KO',
             condition: {
-                userNo: userInfoRes.result.user.userNo,
-                limits: [0, 10]
+                userNo: this.userInfoRes.result.user.userNo,
+                limits: [0, 10],
             }
         };
         this.getQnaList(rqInfo);
@@ -202,14 +220,21 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
                             this.dataModel.qna = _.cloneDeep(res2.result);
                             this.qnaTotalCount = this.dataModel.qna.totalCount;
                             this.consultingTotalCount = this.dataModel.consulting.totalCount;
-                            console.log(this.dataModel, 'dataModel');
+
                             this.setViewModel();
 
-                            // this.flightCount = this.viewModel.list.filter(item => item.postCategoryCode === 'IC01').length;
-                            // this.hotelCount = this.viewModel.list.filter(item => item.postCategoryCode === 'IC02').length;
-                            // this.rentCount = this.viewModel.list.filter(item => item.postCategoryCode === 'IC03').length;
-                            // this.activityCount = this.viewModel.list.filter(item => item.postCategoryCode === 'IC04').length;
-                            // this.airtelCount = this.viewModel.list.filter(item => item.postCategoryCode === 'IC05').length;
+                            this.sampleList = this.dataModel.consulting.list;
+                            const tmp = [];
+                            this.sampleList.forEach((item) => {
+                                tmp[item.consultingCategoryCode] = tmp[item.consultingCategoryCode] || [];
+                                tmp[item.consultingCategoryCode].push(item);
+                            });
+
+                            this.viewModel.consulting.list = this.sampleList;
+                            this.convertedList = tmp;
+                            this.typeCodeCount = this.sampleList.length;
+
+                            console.log(this.convertedList, 'convertedList');
 
                             this.upsertOne({
                                 id: 'my-qna-list',
@@ -269,48 +294,21 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
         this.foldingKey = !this.foldingKey;
     }
 
-    selectCate(selCate) {
-        this.selCate = selCate;
-        this.selCateStr = (<HTMLInputElement>event.target).textContent;
-        this.selectFolding();
-    }
     writeQna() {
-        const initialState = {
-
-        };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalQnaWriteComponent, { initialState, ...configInfo });
-    }
-
-    detailView(i: number) {
-        const initialState = {
-            bookingItemCode: this.viewModel.consulting.list[i].bookingItemCode,
-            boardMasterSeq: this.viewModel.consulting.list[i].boardMasterSeq,
-            questionTitle: this.viewModel.consulting.list[i].questionTitle,
-            questionDetail: this.viewModel.consulting.list[i].questionDetail,
-            requestDatetime: this.viewModel.consulting.list[i].requestDatetime,
-            answerDetail: this.viewModel.consulting.list[i].answerDetail,
-            handleFinishDatetime: this.viewModel.consulting.list[i].handleFinishDatetime,
-        };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalQnaViewComponent, { initialState, ...configInfo });
+        const initialState = {};
+        this.bsModalRef = this.bsModalService.show(MyModalQnaWriteComponent, { initialState, ...ConfigInfo });
     }
 
     clickView(i: number) {
         const initialState = {
-
+            rqInfo: RequestSet
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
+        initialState.rqInfo.condition = {
+            userNo: this.userInfoRes.result.user.userNo,
+            limits: [0, 10],
+            activityMasterSeq: this.dataModel.qna.list[i].activityMasterSeq,
         };
-        this.bsModalRef = this.bsModalService.show(ActivityModalProductQnaComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(ActivityModalProductQnaComponent, { initialState, ...ConfigInfo });
     }
 
     onScroll() {
@@ -324,6 +322,7 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
      * 더보기
      */
     async listIncrease() {
+        console.log(this.tabNo, 'this.tabNo');
 
         if (this.tabNo === 0) {
             this.consultingLimits();
@@ -342,7 +341,7 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
     */
     consultingIncrease(rq) {
 
-        if (this.viewModel.consulting.totalCount === this.dataModel.consulting.totalCount) {
+        if (this.typeCodeCount < 10) {
             return false;
         }
 
@@ -351,8 +350,9 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
                 (res: any) => {
                     if (res.succeedYn) {
                         this.dataModel.consulting = _.cloneDeep(res.result);
+                        console.log(this.dataModel.consulting, 'this.dataModel.consulting');
+
                         this.viewModel.consulting.list = this.viewModel.consulting.list.concat(this.dataModel.consulting.list);
-                        console.log(this.viewModel.consulting.list, 'this.viewModel.consulting.list');
 
 
                     } else {
@@ -375,6 +375,10 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
         rq.condition.limits[1] += 10;
         rq.transactionSetId = this.qnaTransactionSetId;
         this.dataModel.consulting.result = rq;
+
+        console.info('[consultingLimits   rq 01]', rq);
+        console.info('[consultingLimits   rq 01]', this.dataModel.consulting.result);
+
     }
 
     /**
@@ -393,13 +397,13 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
                     if (res.succeedYn) {
                         this.dataModel.qna = _.cloneDeep(res.result);
                         this.viewModel.qna.list = this.viewModel.qna.list.concat(this.dataModel.qna.list);
-                        console.log(this.viewModel.qna.list, 'this.viewModel.qna.list');
+
                     } else {
                         this.alertService.showApiAlert(res.errorMessage);
                     }
                 },
                 (err: any) => {
-                    this.alertService.showApiAlert(err);
+                    this.alertService.showApiAlert(err.error.message);
                 }
             );
     }
@@ -416,5 +420,25 @@ export class MyQnaListPageComponent extends BasePageComponent implements OnInit,
         this.dataModel.qna.result = rq;
     }
 
+    public selectCategory(code, selCate): void {
+
+
+        this.selCate = selCate;
+        this.selCateStr = (<HTMLInputElement>event.target).textContent;
+        this.selectFolding();
+
+        this.viewModel.consulting.list = [];
+
+        if (code === 'ALL') {
+            this.viewModel.consulting.list = this.sampleList;
+
+        } else {
+            this.viewModel.consulting.list = this.convertedList[code] || [];
+
+        }
+
+        this.typeCodeCount = this.viewModel.consulting.list.length;
+
+    }
 
 }

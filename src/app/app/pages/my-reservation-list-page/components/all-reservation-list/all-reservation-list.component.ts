@@ -17,6 +17,7 @@ import { environment } from '@/environments/environment';
 
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
 import { BaseChildComponent } from '@/app/pages/base-page/components/base-child/base-child.component';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 @Component({
     selector: 'app-all-reservation-list',
@@ -121,7 +122,7 @@ export class AllReservationListComponent extends BaseChildComponent implements O
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -299,12 +300,7 @@ export class AllReservationListComponent extends BaseChildComponent implements O
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     flightBookedCancel($resItem) {
@@ -335,7 +331,7 @@ export class AllReservationListComponent extends BaseChildComponent implements O
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -372,7 +368,7 @@ export class AllReservationListComponent extends BaseChildComponent implements O
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -409,7 +405,7 @@ export class AllReservationListComponent extends BaseChildComponent implements O
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );

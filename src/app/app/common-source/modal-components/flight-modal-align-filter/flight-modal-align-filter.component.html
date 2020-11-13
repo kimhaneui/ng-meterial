@@ -10,8 +10,8 @@
         </div>
 
         <!-- modal contents -->
-        <ng-container *ngIf="(flightSearchListRQ$ | async) as listRQ">
-            <form [formGroup]="alignFilterForm" (ngSubmit)="onSubmit(listRQ)">
+        <ng-container *ngIf="this.listRS">
+            <form [formGroup]="alignFilterForm" (ngSubmit)="onSubmit(this.listRS)">
                 <div class="modal-bottom-contents fixed-btn-footer">
                     <div class="item-group pd-top">
                         <ng-container *ngFor="let sortOrder of vm.sortOrders">

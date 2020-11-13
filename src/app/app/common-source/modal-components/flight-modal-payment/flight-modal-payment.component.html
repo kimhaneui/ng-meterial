@@ -65,9 +65,7 @@
                                 <p class="font-xs color-sub3">({{ cabinClassTxt }})</p>
                             </div>
                             <div class="right">
-                                <ng-container *ngFor="let item of rs.selected.flights">
-                                    <span class="font-lg-b color-point2">{{item.price.fares[0].amountSum | number}}원</span>
-                                </ng-container>
+                                <span class="font-lg-b color-point2">{{ viewModel.totalAmount | number }}원</span>
                             </div>
                         </div>
                     </div>

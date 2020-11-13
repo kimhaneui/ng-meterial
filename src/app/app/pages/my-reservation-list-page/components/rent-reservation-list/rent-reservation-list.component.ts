@@ -14,6 +14,8 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 
 import { environment } from '@/environments/environment';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
 import { BaseChildComponent } from '@app/pages/base-page/components/base-child/base-child.component';
 
@@ -41,15 +43,15 @@ export class RentReservationListComponent extends BaseChildComponent implements 
     public lastMessage: any;
 
     private subscriptionList: Subscription[];
-
+    type: any
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        private readonly router: Router,
-        private readonly route: ActivatedRoute,
-        private readonly apiMypageService: ApiMypageService,
+        private router: Router,
+        private route: ActivatedRoute,
+        private apiMypageService: ApiMypageService,
         private apiBookingService: ApiBookingService,
-        public bsModalService: BsModalService,
-        private readonly loadingBar: LoadingBarService,
+        private bsModalService: BsModalService,
+        private loadingBar: LoadingBarService,
         private alertService: ApiAlertService
     ) {
         super(platformId);
@@ -99,6 +101,7 @@ export class RentReservationListComponent extends BaseChildComponent implements 
             .toPromise()
             .then((res: any) => {
                 console.info('[예약리스트 > res]', res);
+                this.type = res.result.list[0].categories[0].code;
 
                 if (res.succeedYn) {
                     this.limitStart += this.pageCount;
@@ -114,7 +117,7 @@ export class RentReservationListComponent extends BaseChildComponent implements 
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -174,9 +177,13 @@ export class RentReservationListComponent extends BaseChildComponent implements 
 
         const extras = {
             relativeTo: this.route,
+            queryParams: {
+                bookingItemCode: rqInfo.condition.bookingItemCode,
+                type: this.type
+            }
         };
-        console.log('rqInfo >>>>>', rqInfo);
 
+        console.log('extras >>>>>', extras);
         this.router.navigate([path], extras);
     }
 
@@ -293,12 +300,7 @@ export class RentReservationListComponent extends BaseChildComponent implements 
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     rentBookedCancel($resItem) {
@@ -328,7 +330,7 @@ export class RentReservationListComponent extends BaseChildComponent implements 
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         ];

@@ -1,17 +1,23 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { select, Store } from '@ngrx/store';
-import { ITreeOptions, IActionMapping, ITreeState } from '@circlon/angular-tree-component';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
-import { BsModalRef } from 'ngx-bootstrap/modal';
+import { Subscription } from 'rxjs';
+
+import { Store } from '@ngrx/store';
+
 import * as activitySearchResultPageSelectors from '@app/store/activity-search-result-page/activity-result-search/activity-result-search.selectors';
+
+import { BsModalRef } from 'ngx-bootstrap/modal';
+
 import * as _ from 'lodash';
 import * as qs from 'qs';
-import { BaseChildComponent } from '@/app/pages/base-page/components/base-child/base-child.component';
+
 import { ActivityComServiceService } from '@/app/common-source/services/activity-com-service/activity-com-service.service';
+
 import { ActivityCommon } from '@/app/common-source/enums/activity/activity-common.enum';
 import { ActivityStore } from '@/app/common-source/enums/activity/activity-store.enum';
+
+import { ITreeOptions, IActionMapping, ITreeState } from '@circlon/angular-tree-component';
+import { BaseChildComponent } from '@/app/pages/base-page/components/base-child/base-child.component';
 
 @Component({
     selector: 'app-activity-modal-option',
@@ -21,7 +27,7 @@ import { ActivityStore } from '@/app/common-source/enums/activity/activity-store
 export class ActivityModalOptionComponent extends BaseChildComponent implements OnInit, OnDestroy {
     rqInfo: any;
 
-    optionType: String = '';
+    optionType: string = '';
 
     vm: any = {
         continents: null, // 도시
@@ -52,7 +58,7 @@ export class ActivityModalOptionComponent extends BaseChildComponent implements 
         @Inject(PLATFORM_ID) public platformId: any,
         private store: Store<any>,
         private router: Router,
-        private readonly activityComServiceService: ActivityComServiceService,
+        private activityComServiceService: ActivityComServiceService,
         public bsModalRef: BsModalRef,
     ) {
         super(platformId);
@@ -402,11 +408,6 @@ export class ActivityModalOptionComponent extends BaseChildComponent implements 
                     flatItem[key] = item[key];
                 }
 
-
-
-
-
-
                 // recursive flattern on subitems
                 // add recursive call results to the
                 // current stack version of "flat", by merging arrays
@@ -426,7 +427,9 @@ export class ActivityModalOptionComponent extends BaseChildComponent implements 
         this.bsModalRef.hide();
     }
 
-    onCloseClick(e) {
+    onCloseClick(event: MouseEvent) {
+        event && event.preventDefault();
+
         this.modalClose();
     }
 

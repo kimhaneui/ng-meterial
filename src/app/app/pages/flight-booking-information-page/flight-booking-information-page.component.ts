@@ -3,15 +3,15 @@ import { DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, FormControl, Validators, AbstractControl } from '@angular/forms';
 import { Title, Meta } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, of, Observable, Subscription } from 'rxjs';
-import { takeWhile, catchError, finalize } from 'rxjs/operators';
+import { forkJoin, of, Subscription } from 'rxjs';
+import { catchError, concatMap, finalize } from 'rxjs/operators';
 
-import { Store, select } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
-import { upsertFlightBookingInformationPage } from 'src/app/store/flight-booking-information-page/flight-booking-information-page/flight-booking-information-page.actions';
-import { upsertFlightSessionStorage } from 'src/app/store/flight-common/flight-session-storage/flight-session-storage.actions';
+import { upsertFlightBookingInformationPage } from '@/app/store/flight-booking-information-page/flight-booking-information-page/flight-booking-information-page.actions';
+import { upsertFlightSessionStorage } from '@/app/store/flight-common/flight-session-storage/flight-session-storage.actions';
 
-import * as commonUserInfoSelectors from 'src/app/store/common/common-user-info/common-user-info.selectors';
+import * as commonUserInfoSelectors from '@/app/store/common/common-user-info/common-user-info.selectors';
 
 import { TranslateService } from '@ngx-translate/core';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
@@ -21,26 +21,30 @@ import * as _ from 'lodash';
 import * as moment from 'moment';
 import { extendMoment } from 'moment-range';
 
-import { SeoCanonicalService } from 'src/app/common-source/services/seo-canonical/seo-canonical.service';
-import { JwtService } from 'src/app/common-source/services/jwt/jwt.service';
-import { ApiFlightService } from 'src/app/api/flight/api-flight.service';
+import { SeoCanonicalService } from '@/app/common-source/services/seo-canonical/seo-canonical.service';
+import { JwtService } from '@/app/common-source/services/jwt/jwt.service';
+import { ApiFlightService } from '@/app/api/flight/api-flight.service';
 import { ApiBookingService } from '@/app/api/booking/api-booking.service';
 import { CommonValidatorService } from '@/app/common-source/services/common-validator/common-validator.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
 
 import { environment } from '@/environments/environment';
 
-import { HeaderTypes } from 'src/app/common-source/enums/header-types.enum';
+import { RequestParam, RequestSet } from '@/app/common-source/models/common/condition.model';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { HeaderTypes } from '@/app/common-source/enums/header-types.enum';
 import { TravelerTypeKr } from '@/app/common-source/enums/common/traveler-type.enum';
 import { CabinClass } from '@/app/common-source/enums/flight/cabin-class.enum';
 import { FlightCommon } from '@/app/common-source/enums/flight/flight-common.enum';
 import { FlightStore } from '@/app/common-source/enums/flight/flight-store.enum';
+import { MyCommon } from '@/app/common-source/enums/my/my-common.enum';
 
 import { BasePageComponent } from '../base-page/base-page.component';
-import { CommonModalAlertComponent } from 'src/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
+import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
 import { FlightModalAgreementComponent } from './modal-components/flight-modal-agreement/flight-modal-agreement.component';
-import { FlightModalPaymentDetailComponent } from 'src/app/common-source/modal-components/flight-modal-payment-detail/flight-modal-payment-detail.component';
-import { FlightModalScheduleInformationComponent } from 'src/app/common-source/modal-components/flight-modal-schedule-information/flight-modal-schedule-information.component';
+import { FlightModalPaymentDetailComponent } from '@/app/common-source/modal-components/flight-modal-payment-detail/flight-modal-payment-detail.component';
+import { FlightModalScheduleInformationComponent } from '@/app/common-source/modal-components/flight-modal-schedule-information/flight-modal-schedule-information.component';
 
 @Component({
     selector: 'app-flight-booking-information-page',
@@ -60,12 +64,9 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
 
     fareRuleRQ: any;
     sessionRQ: any;
-    flightBookingRQ: any;
-
-    flightCommonSession$: Observable<any>;
+    flightBookingRQ: RequestParam;
 
     totalPaxCount: number = 0;
-    rxAlive: any = true;
 
     fareRuleResultList: any;
     segHoldResultList: any = [];
@@ -83,12 +84,6 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
     submitted: any;
 
     howMany: any = '';
-
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false,
-        keyboard: false
-    };
 
     vm: any = {
         booker: {
@@ -121,7 +116,6 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
     searchBool: boolean = false;
     userInfo: any = {};
     traveler: any;
-    commonUserInfo$: any;
     resolveData: any;
     travlerArray: Array<string>;
     element: any;
@@ -130,6 +124,8 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
     public apisNeededYn: boolean;
     public selectedList: any;
     public amountSum: number;
+    public isAllDomestic: boolean;
+    public domesticFareList: Array<Array<any>>;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
@@ -145,7 +141,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
         private datePipe: DatePipe,
         private fb: FormBuilder,
         private comValidS: CommonValidatorService,
-        public jwtService: JwtService,
+        private jwtService: JwtService,
         private apiBookingS: ApiBookingService,
         private el: ElementRef,
         private alertService: ApiAlertService
@@ -165,6 +161,8 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
         this.bookingLoading = true;
         this.apisNeededYn = false;
         this.selectedList = [];
+        this.fareRuleResultList = [];
+        this.domesticFareList = [];
     }
 
     ngOnInit(): void {
@@ -177,22 +175,24 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
         this.modelInit('flight-booking-info', this.sessionRQ);
 
         console.info('[2. 헤더 초기화 시작]');
-        if (this.isBrowser) {
-            console.info('[this.isBrowser]', this.isBrowser);
-            const curUrl = this.route.snapshot['_routerState'].url;
-            console.info('[this.isBrowser > curUrl]', curUrl);
+        console.info('[this.isBrowser]', this.isBrowser);
+        const curUrl = this.route.snapshot['_routerState'].url;
+        console.info('[this.isBrowser > curUrl]', curUrl);
 
-            this.jwtService.loginGuardInit(curUrl).then(
+        this.jwtService.loginGuardInit(curUrl)
+            .then(
                 (e) => {
                     console.info('[jwtService.loginGuardInit > ok]', e);
                     if (e) {
                         this.pageInit(this.sessionRQ);
+                    } else {
+                        this.alertService.showApiAlert();
                     }
                 },
                 (err) => {
                     console.info('[jwtService.loginGuardInit > err]', err);
-                });
-        }
+                }
+            );
     }
 
     ngOnDestroy(): void {
@@ -201,7 +201,6 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
                 item.unsubscribe();
             }
         );
-        this.rxAlive = false;
         this.closeAllModals();
     }
 
@@ -219,10 +218,8 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
             userName: new FormControl('', [Validators.required, this.comValidS.customPattern({ pattern: /^[가-힣a-zA-Z]*$/, msg: '한글 또는 영문으로만 입력해주세요.' })]),
             mobileNo: new FormControl('', [Validators.required, this.comValidS.customPattern({ pattern: /^01([0|1|6|7|8|9]?)([0-9]{3,4})([0-9]{4})$/, msg: '\'-\'를 제외한 숫자만 입력해주세요.' })]),
             email: new FormControl('', [Validators.required, Validators.email]),
-
             // 여행자
             travelers: this.fb.array([]),
-
             // 약관동의
             agreeList: this.fb.array([new FormControl(false), new FormControl(false), new FormControl(false)], [this.comValidS.validateAgreeList])
         });
@@ -235,15 +232,14 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
 
     subscribeInit() {
         this.subscriptionList.push(
-            this.store.select(commonUserInfoSelectors.getSelectId(['commonUserInfo']))
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(commonUserInfoSelectors.getSelectId(['commonUserInfo']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[userInfo]', ev);
                         if (ev) {
                             this.userInfo = _.cloneDeep(ev.userInfo);
                             this.traveler = _.cloneDeep(ev.traveler);
-
                             this.travelerForm.patchValue({
                                 userNo: this.userInfo.user.userNo,
                                 userName: this.userInfo.user.nameKo,
@@ -303,12 +299,8 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
         this.headerInit('user-information', headerTitle, headerTime);
         // ---------[헤더 초기화]
         console.info('[2. 헤더 초기화 끝]');
-
-
         console.info('[3. API 호출]');
-
         this.flightSearch($resolveData.rq);
-
         this.fareRuleRQ.map(
             (item: any, index: number): void => {
                 const segHoldRq: any = _.cloneDeep(item);
@@ -321,58 +313,73 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
                 this.subscriptionList.push(
                     forkJoin([
                         this.apiflightSvc.POST_FLIGHT_FARERULE(item),
-                        this.apiflightSvc.POST_FLIGHT_SEGHOLD(segHoldRq)
+                        this.apiflightSvc.POST_FLIGHT_SEGHOLD(segHoldRq),
                     ])
                         .pipe(
-                            takeWhile(() => this.rxAlive),
-                            catchError(([err1, err2]) => of([err1, err2])),
+                            catchError(
+                                ([err1, err2]: any) => {
+                                    if (err1) {
+                                        this.alertService.showApiAlert(err1.error.message);
+                                    } else if (err2) {
+                                        this.alertService.showApiAlert(err2.error.message);
+                                    }
+
+                                    return of();
+                                }
+                            ),
                             finalize(() => { this.bookingLoading = false; })
                         )
                         .subscribe(
                             ([res1, res2]: any) => {
                                 /**
-                               * res1 : 항공 운임규정 조회 정보
-                               * res2 : 항공 Seg Hold 정보
-                               * res3 : 항공검색 정보
-                               */
+                                 * res1 : 항공 운임규정 조회 정보
+                                 * res2 : 항공 Seg Hold 정보
+                                 * res3 : 항공검색 정보
+                                 */
                                 console.info('[res1, res2]', res1, res2);
 
-                                this.fareRuleResultList = _.cloneDeep(res1);
+                                if (res1.succeedYn && res2.succeedYn) {
+                                    this.fareRuleResultList = _.concat(this.fareRuleResultList, res1.result.list);
 
-                                console.info('[스토어에 flight-fareRule-rs 저장]');
-                                this.modelInit('flight-fareRule-rs', this.fareRuleResultList);
+                                    console.info('[스토어에 flight-fareRule-rs 저장]');
+                                    this.modelInit(FlightStore.STORE_FARERULE_RS, _.cloneDeep(res1));
 
-                                if (res2.apisNeededYn === true)
-                                    this.apisNeededYn = true;
+                                    if (res2.apisNeededYn === true) {
+                                        this.apisNeededYn = true;
+                                    }
 
-                                const resSegHold: any = _.cloneDeep(res2);
-                                this.segHoldResultList[index] = resSegHold;
-                                console.log(index, 'segHoldResultList', this.segHoldResultList);
+                                    this.segHoldResultList[index] = _.cloneDeep(res2);
+                                    console.log(index, 'segHoldResultList', this.segHoldResultList);
 
-                                if (index === 0 && !this.segHoldResultList[0].result.bookableYn) {
-                                    const titleTxt: string = '좌석 확보에 실패했습니다.';
-                                    const alertHtml: string = '다른 항공편을 이용바랍니다.';
-                                    const evtObj: any = {
-                                        ok: {
-                                            name: '확인',
-                                            fun: () => {
-                                                this.goFlightMain();
+                                    if (!this.segHoldResultList[index].result.bookableYn) {
+                                        const titleTxt: string = '좌석 확보에 실패했습니다.';
+                                        const alertHtml: string = '다른 항공편을 이용바랍니다.';
+                                        const evtObj: any = {
+                                            ok: {
+                                                name: '확인',
+                                                fun: () => {
+                                                    this.goFlightMain();
+                                                }
                                             }
-                                        }
-                                    };
-                                    this.modalConfirmEvt(
-                                        titleTxt,
-                                        alertHtml,
-                                        evtObj
-                                    );
-                                    return false;
+                                        };
+                                        this.modalConfirmEvt(titleTxt, alertHtml, evtObj);
+                                        return false;
+                                    }
+
+                                    const fareRuleLastIndex: number = this.fareRuleRQ.length - 1;
+
+                                    if (index === fareRuleLastIndex) {
+                                        this.travlerArrayInit($resolveData);
+                                    }
+
+                                    this.loadingBool = true;
+                                } else {
+                                    if (res1.errorMessage) {
+                                        this.alertService.showApiAlert(res1.errorMessage);
+                                    } else {
+                                        this.alertService.showApiAlert(res2.errorMessage);
+                                    }
                                 }
-
-                                const fareRuleLastIndex: number = this.fareRuleRQ.length - 1;
-                                if (index === fareRuleLastIndex)
-                                    this.travlerArrayInit($resolveData);
-
-                                this.loadingBool = true;
                             }
                         )
                 );
@@ -393,7 +400,6 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
                 } else if (index < child) {
                     this.addTraveler('CHD');
                     return `(아동 ` + `${(index - adult) + 1})`;
-
                 } else if (index < infant) {
                     this.addTraveler('INF');
                     return `(유아 ` + `${(index - child) + 1})`;
@@ -425,49 +431,81 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
     flightSearch($request) {
         this.subscriptionList.push(
             this.apiflightSvc.POST_FLIGHT_LIST_ITINERARY($request)
+                .pipe(
+                    concatMap(
+                        (res: any) => {
+                            try {
+                                console.info('[API 호출 | 항공일정 리스트 >]', res);
+                                let allSegList: any = [];
+                                this.isAllDomestic = true;
+                                let isFlight = false;
+
+                                if (res.succeedYn) {
+                                    this.scheduleResultList = _.cloneDeep(res['result']);    // 항공 검색결과(RS)
+                                    this.setViewModel();
+                                    this.scheduleResultList.selected.flights.map(
+                                        (item: any): void => {
+                                            for (const itineraryItem of item.itineraries) {
+                                                allSegList = [...allSegList, ...itineraryItem.segments];
+                                            }
+
+                                            for (const passengerFareItem of item.price.fares[0].passengerFares) {
+                                                this.totalPaxCount += passengerFareItem.paxCount;
+                                            }
+
+                                            if (item.airlineCode === 'KE' || item.airlineCode === 'TW') {
+                                                isFlight = true;
+                                            }
+                                        }
+                                    );
+
+                                    allSegList.map(
+                                        (segItem: any): void => {
+                                            console.info('segItem', segItem);
+                                            if (this.isAllDomestic && (!_.isEqual(segItem.destination.countryCode, 'KR') || !_.isEqual(segItem.origin.countryCode, 'KR'))) {
+                                                this.isAllDomestic = false;
+                                            }
+                                        }
+                                    );
+
+
+                                    this.isAssembleKoName = (this.isAllDomestic && isFlight) ? true : false;
+                                    console.info('국내선 and (대한항공 or 티웨이)', this.isAssembleKoName);
+
+                                    if (this.isAllDomestic) {
+                                        return this.apiflightSvc.POST_FLIGHT_FARE_DISCOUT(this.makeFareDiscount());
+                                    } else {
+                                        return of();
+                                    }
+                                } else {
+                                    this.alertService.showApiAlert(res.errorMessage);
+                                }
+                            } catch (error) {
+                                this.alertService.showApiAlert(error);
+                            }
+                        }
+                    )
+                )
                 .subscribe(
                     (res: any) => {
-                        console.info('[API 호출 | 항공일정 리스트 >]', res);
-                        let allSegList: any = [];
-                        let isAllDomestic = true;
-                        let isFlight = false;
-                        if (res.succeedYn) {
-                            this.scheduleResultList = _.cloneDeep(res['result']);    // 항공 검색결과(RS)
-
-                            this.scheduleResultList.selected.flights.map(
-                                (item: any): void => {
-                                    for (const itineraryItem of item.itineraries) {
-                                        allSegList = [...allSegList, ...itineraryItem.segments];
+                        try {
+                            if (res.succeedYn) {
+                                this.domesticFareList = res.result.domesticFares.map(
+                                    (item: any) => {
+                                        return item.fares;
                                     }
+                                );
 
-                                    for (const passengerFareItem of item.price.fares[0].passengerFares) {
-                                        this.totalPaxCount += passengerFareItem.paxCount;
-                                    }
-
-                                    if (item.airlineCode === 'KE' || item.airlineCode === 'TW') {
-                                        isFlight = true;
-                                    }
-                                }
-                            );
-
-                            allSegList.map(
-                                (segItem: any): void => {
-                                    console.info('segItem', segItem);
-                                    if (!(_.isEqual(segItem.destination.countryCode, 'KR') && _.isEqual(segItem.origin.countryCode, 'KR')))
-                                        isAllDomestic = false;
-                                }
-                            );
-
-                            this.isAssembleKoName = (isAllDomestic && isFlight) ? true : false;
-                            console.info('국내선 and (대한항공 or 티웨이)', this.isAssembleKoName);
-
-                            this.setViewModel();
-                        } else {
-                            this.alertService.showApiAlert(res.errorMessage);
+                                console.log(this.domesticFareList);
+                            } else {
+                                this.alertService.showApiAlert(res.errorMessage);
+                            }
+                        } catch (error) {
+                            this.alertService.showApiAlert(error);
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -517,6 +555,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
             originDate: startDestination.origin.departureDate,
             originTime: startDestination.origin.departureTime,
             originCityNameLn: startDestination.origin.cityNameLn,
+            originCityCodeIata: startDestination.origin.cityCodeIata,
             originTerminal: startDestination.origin.terminal,
             airlineNameLn: startDestination.marketing.airlineNameLn,
             airlineCode: startDestination.marketing.airlineCode,
@@ -526,7 +565,9 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
             destinationDate: endDestination.destination.arrivalDate,
             destinationTime: endDestination.destination.arrivalTime,
             destinationCityNameLn: endDestination.destination.cityNameLn,
+            destinationCityCodeIata: startDestination.destination.cityCodeIata,
             destinationterminal: endDestination.destination.terminal,
+            cabinClassCode: startDestination.cabinClassCode
         };
 
         switch (item.segments.length) {
@@ -574,151 +615,185 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
      */
     upsertOne($obj) {
         this.store.dispatch(upsertFlightBookingInformationPage({
-            flightBookingInformationPage: _.cloneDeep($obj)
+            flightBookingInformationPage: $obj
         }));
     }
 
     upsertOneSession($obj) {
         this.store.dispatch(upsertFlightSessionStorage({
-            flightSessionStorage: _.cloneDeep($obj)
+            flightSessionStorage: $obj
         }));
     }
 
     /**
      * 예약완료 페이지로 이동
      */
-    goToBookingCompletePage() {
-        this.flightBookingRQ = [];
+    goToBookingCompletePage = () => {
         let sixMonUnderFlag: boolean = false; // 여권 만료일 6개월 true
+        this.flightBookingRQ = _.cloneDeep(RequestSet);
+        this.flightBookingRQ.condition = {
+            domainAddress: window.location.hostname,
+            deviceTypeCode: environment.DEVICE_TYPE, // MA: Mobile App, MW: Mobile Web, PC: PC
+            booker: {
+                name: this.travelerForm.get('userName').value,
+                userNo: this.userInfo.user.userNo,
+                email: this.travelerForm.get('email').value,
+                mobileNo: this.travelerForm.get('mobileNo').value
+            },
+            travelers: [],
+            flightItems: []
+        };
+
         this.fareRuleRQ.map(
             (item: any, index: number): void => {
                 console.info('goToBookingCompletePage', index);
                 if (!sixMonUnderFlag) {
-                    const flight: any = item.condition.flight;
+                    const flight: any = _.cloneDeep(item.condition.flight);
                     flight.sessionKey = this.segHoldResultList[index].result.sessionKey;
                     flight.tripTypeCode = item.condition.tripTypeCode;
-
-                    const rq: any = {
-                        stationTypeCode: environment.STATION_CODE,
-                        transactionSetId: this.fareRuleRQ.transactionSetId,
-                        currency: 'KRW',
-                        language: 'KO',
-                        condition: {
-                            domainAddress: window.location.hostname,
-                            deviceTypeCode: 'MA', // MA: Mobile App, MW: Mobile Web, PC: PC
-                            booker: {
-                                name: this.travelerForm.get('userName').value,
-                                userNo: this.userInfo.user.userNo,
-                                email: this.travelerForm.get('email').value,
-                                mobileNo: this.travelerForm.get('mobileNo').value
-                            },
-                            travelers: [],
-                            flightItems: [flight]
-                        }
-                    };
-                    _.forEach(this.travelers.value,
-                        (subItem: any, subIndex: number) => {
-                            if (!sixMonUnderFlag) {
-                                console.log('item2 >', subItem);
-                                console.log('travelers >', this.travelers.value);
-                                const travel: any = {
-                                    travelerIndex: subIndex + 1,
-                                    gender: subItem.gender,
-                                    ageTypeCode: subItem.ageTypeCode,
-                                    nationalityCode: subItem.nationalityCode,
-                                    firstName: subItem.firstName,
-                                    middleName: !_.isEmpty(subItem.middleName) ? subItem.middleName : '',
-                                    lastName: subItem.lastName,
-                                    userNo: this.userInfo.user.userNo
-                                };
-
-                                const birthday: string = subItem.birthDay;
-                                travel.birthday = [birthday.toString().slice(0, 4), birthday.toString().slice(4, 6), birthday.toString().slice(6, 8)].join('-');
-
-                                //국내선 대한항공(KE), 티웨이항공(TW)인 경우, 한글 성과 이름 따로 입력 받고 name 성이름 붙여서 조립
-                                if (this.isAssembleKoName) {
-                                    travel.name = subItem.lastNameLn + subItem.firstNameLn;
-                                    travel.lastNameLn = subItem.lastNameLn;
-                                    travel.firstNameLn = subItem.firstNameLn;
-                                } else {
-                                    travel.name = subItem.name;
-                                }
-
-                                // 여권 정보 입력 필수 경우
-                                if (this.apisNeededYn) {
-                                    travel.passportNo = subItem.passportNo;
-                                    travel.issueCountryCode = subItem.issueCountryCode;
-                                    const expireDate: string = subItem.expireDate;
-                                    travel.expireDate = [expireDate.toString().slice(0, 4), expireDate.toString().slice(4, 6), expireDate.toString().slice(6, 8)].join('-');
-
-                                    const originDepartureDate = this.scheduleResultList.selected.flights[0].itineraries[0].segments[0].origin.departureDate;
-                                    sixMonUnderFlag = this.comValidS.isErrorDiff(originDepartureDate, travel.expireDate, 'months', 6);
-                                    if (sixMonUnderFlag) {
-                                        console.info('sixMonUnderFlag', sixMonUnderFlag);
-                                        this.validationAlert(null, '여권 만료일이 출발일로부터 6개월 미만으로 여권 정보 입력이 불가합니다.', '해당 여권으로 출입국 가능 여부를 반드시 확인 바랍니다.');
-                                        return false;
-                                    }
-                                }
-
-                                rq.condition.travelers.push(travel);
-                            }
-                        }
-                    );
-
-
-                    this.flightBookingRQ.push(rq);
+                    flight.itemIndex = index;
+                    this.flightBookingRQ.condition.flightItems.push(flight);
                 }
             }
         );
 
+        _.forEach(this.travelers.value, (subItem: any, subIndex: number) => {
+            if (!sixMonUnderFlag) {
+                console.log('item2 >', subItem);
+                console.log('travelers >', this.travelers.value);
+                const travel: any = {
+                    travelerIndex: subIndex + 1,
+                    gender: subItem.gender,
+                    ageTypeCode: subItem.ageTypeCode,
+                    nationalityCode: subItem.nationalityCode,
+                    firstName: subItem.firstName,
+                    middleName: !_.isEmpty(subItem.middleName) ? subItem.middleName : '',
+                    lastName: subItem.lastName,
+                    userNo: this.userInfo.user.userNo,
+                    domesticFareCode: '' || undefined,
+                };
+
+                const birthday: string = subItem.birthDay;
+                travel.birthday = [birthday.toString().slice(0, 4), birthday.toString().slice(4, 6), birthday.toString().slice(6, 8)].join('-');
+
+                //국내선 대한항공(KE), 티웨이항공(TW)인 경우, 한글 성과 이름 따로 입력 받고 name 성이름 붙여서 조립
+                if (this.isAssembleKoName) {
+                    travel.name = subItem.lastNameLn + subItem.firstNameLn;
+                    travel.lastNameLn = subItem.lastNameLn;
+                    travel.firstNameLn = subItem.firstNameLn;
+                } else {
+                    travel.name = subItem.name;
+                }
+
+                // 여권 정보 입력 필수 경우
+                if (this.apisNeededYn) {
+                    travel.passportNo = subItem.passportNo;
+                    travel.issueCountryCode = subItem.issueCountryCode;
+                    const expireDate: string = subItem.expireDate;
+                    travel.expireDate = [expireDate.toString().slice(0, 4), expireDate.toString().slice(4, 6), expireDate.toString().slice(6, 8)].join('-');
+
+                    const originDepartureDate = this.scheduleResultList.selected.flights[0].itineraries[0].segments[0].origin.departureDate;
+                    sixMonUnderFlag = this.comValidS.isErrorDiff(originDepartureDate, travel.expireDate, 'months', 6);
+                    if (sixMonUnderFlag) {
+                        console.info('sixMonUnderFlag', sixMonUnderFlag);
+                        this.validationAlert(null, '여권 만료일이 출발일로부터 6개월 미만으로 여권 정보 입력이 불가합니다.', '해당 여권으로 출입국 가능 여부를 반드시 확인 바랍니다.');
+                        return false;
+                    }
+                }
+
+                this.flightBookingRQ.condition.travelers.push(travel);
+            }
+        });
+
         if (!sixMonUnderFlag) {
             console.info('onSubmit flightBookingRQ', this.flightBookingRQ);
-
-            this.flightBookingRQ.map(
-                (item: any, index: number) => {
-                    const lastRqBool: boolean = (index === this.flightBookingRQ.length - 1) ? true : false;
-                    this.flightBookingApi(item, lastRqBool);
-                }
-            );
+            this.flightBookingApi(this.flightBookingRQ, true);
         }
-    }
+    };
 
     flightBookingApi(rq, lastRqBool: boolean) {
-        this.subscriptionList.push(
-            this.apiBookingS.POST_BOOKING(rq)
-                .subscribe(
-                    (res: any) => {
-                        console.info('[항공 예약 res]', res.result);
-                        if (res.succeedYn) {
-                            if (lastRqBool) {
-                                const rqInfo = {
-                                    rq: this.flightBookingRQ,
-                                    rs: res
-                                };
+        this.upsertOne(
+            {
+                id: FlightStore.STORE_FLIGHT_BOOKING_RQ,
+                option: _.cloneDeep(rq)
+            }
+        );
 
-                                this.modelInit(FlightStore.STORE_FLIGHT_BOOKING_RS, rqInfo, true);
+        if (this.checkInstantPayment()) {
+            const newRq: RequestParam = _.cloneDeep(rq);
+            newRq.condition = _.omit(rq.condition, ['deviceTypeCode', 'domainAddress', 'booker', 'travelers']);
 
-                                //결제하기 페이지로 이동
-                                const path = FlightCommon.PAGE_BOOKING_PAYMENT;
-
-                                const extras = {
-                                    relativeTo: this.route
-                                };
-
-                                // 페이지 이동
-                                this.router.navigate([path], extras);
+            this.subscriptionList.push(
+                this.apiBookingS.POST_BOOKING_DISCOUNT_INFO(newRq)
+                    .pipe(
+                        concatMap(
+                            (res: any) => {
+                                try {
+                                    if (res.succeedYn) {
+                                        return this.apiBookingS.POST_BOOKING_V2(rq);
+                                    } else {
+                                        this.alertService.showApiAlert(res.errorMessage);
+                                        return of();
+                                    }
+                                } catch (error) {
+                                    this.alertService.showApiAlert(error);
+                                }
                             }
-                        } else {
-                            console.info('항공 예약 생성 실패');
+                        )
+                    )
+                    .subscribe(
+                        (res: any) => {
+                            console.info('[항공 예약 res]', res.result);
+                            if (res.succeedYn) {
+                                if (lastRqBool) {
+                                    const rqInfo = {
+                                        rq: this.flightBookingRQ,
+                                        rs: res
+                                    };
+                                    this.modelInit(FlightStore.STORE_FLIGHT_BOOKING_RS, rqInfo, true);
+                                    // 페이지 이동
+                                    this.router.navigate([FlightCommon.PAGE_BOOKING_PAYMENT]);
+                                }
+                            } else {
+                                console.info('항공 예약 생성 실패');
+                                this.bookingFailEvt();
+                            }
+                        },
+                        (error: any) => {
+                            console.info('[flight booking error]', error);
                             this.bookingFailEvt();
                         }
-                    },
-                    (error: any) => {
-                        console.info('[flight booking error]', error);
-                        this.bookingFailEvt();
-                    }
-                )
-        );
+                    )
+            );
+        } else {
+            this.subscriptionList.push(
+                this.apiBookingS.POST_BOOKING_V2(rq)
+                    .subscribe(
+                        (res: any) => {
+                            console.info('[항공 예약 res]', res.result);
+
+                            if (res.succeedYn) {
+                                if (lastRqBool) {
+                                    const rqInfo = {
+                                        rq: this.flightBookingRQ,
+                                        rs: res
+                                    };
+                                    this.modelInit(FlightStore.STORE_FLIGHT_BOOKING_RS, rqInfo, true);
+                                    // 페이지 이동
+                                    this.router.navigate([FlightCommon.PAGE_BOOKING_PAYMENT]);
+                                }
+                            } else {
+                                console.info('항공 예약 생성 실패');
+                                this.bookingFailEvt();
+                            }
+                        },
+                        (error: any) => {
+                            console.info('[flight booking error]', error);
+                            this.bookingFailEvt();
+                        }
+                    )
+            );
+        }
     }
 
     bookingFailEvt() {
@@ -733,11 +808,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
             }
         };
 
-        this.modalConfirmEvt(
-            titleTxt,
-            alertHtml,
-            evtObj
-        );
+        this.modalConfirmEvt(titleTxt, alertHtml, evtObj);
     }
 
     validationAlert(targetId: any, txt?: string, alertHtmlVal?: string) {
@@ -756,11 +827,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
             }
         };
 
-        this.modalConfirmEvt(
-            titleTxt,
-            alertHtml,
-            evtObj
-        );
+        this.modalConfirmEvt(titleTxt, alertHtml, evtObj);
     }
 
     newTraveler(ageLimit?: any): FormGroup {
@@ -827,7 +894,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
             ),
             birthDay: new FormControl('', birthDayValidators),
             gender: new FormControl('M', Validators.required),
-            nationalityCode: new FormControl('', [Validators.required]),
+            nationalityCode: new FormControl('KR', [Validators.required]),
             ageTypeCode: new FormControl(ageLimit ? ageLimit.typeCode : 'ADT')
         };
 
@@ -852,8 +919,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
     addTraveler(type?: any) {
         if (type) {
             this.travelers.push(this.newTraveler(this.ageLimit[type]));
-        }
-        else {
+        } else {
             this.travelers.push(this.newTraveler());
         }
 
@@ -864,7 +930,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
      * 모든 bsModalService 닫기
      */
     closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -875,7 +941,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
             rs: this.scheduleResultList,
             rq: this.resolveData.rq
         };
-        this.bsModalScheduleRef = this.bsModalService.show(FlightModalScheduleInformationComponent, { initialState, ...this.configInfo });
+        this.bsModalScheduleRef = this.bsModalService.show(FlightModalScheduleInformationComponent, { initialState, ...ConfigInfo });
     }
 
     onPayDetail() {
@@ -883,7 +949,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
         const initialState = {
             rs: this.scheduleResultList
         };
-        this.bsModalDetailRef = this.bsModalService.show(FlightModalPaymentDetailComponent, { initialState, ...this.configInfo });
+        this.bsModalDetailRef = this.bsModalService.show(FlightModalPaymentDetailComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -920,7 +986,6 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
             }
         );
 
-
         const initialState = {
             storeId: storeId,
             rs: this.fareRuleResultList,
@@ -938,7 +1003,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
 
             })
         };
-        this.bsModalScheduleRef = this.bsModalService.show(FlightModalAgreementComponent, { initialState, ...this.configInfo });
+        this.bsModalScheduleRef = this.bsModalService.show(FlightModalAgreementComponent, { initialState, ...ConfigInfo });
     }
 
     onSelectTravelers(event: any, idx: number) {
@@ -1073,11 +1138,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
                 fun: () => { }
             }
         };
-        this.modalConfirmEvt(
-            titleTxt,
-            alertHtml,
-            evtObj
-        );
+        this.modalConfirmEvt(titleTxt, alertHtml, evtObj);
     }
 
     searchStateOff() {
@@ -1108,9 +1169,20 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
     */
     public userInfoReset(event?: any, num?: number) {
         event && event.preventDefault();
-        if (num === 1) this.travelerForm.get('userName').patchValue('');
-        else if (num === 2) this.travelerForm.get('mobileNo').patchValue('');
-        else if (num === 3) this.travelerForm.get('email').patchValue('');
+
+        switch (num) {
+            case 1:
+                this.travelerForm.get('userName').patchValue('');
+                break;
+
+            case 2:
+                this.travelerForm.get('mobileNo').patchValue('');
+                break;
+
+            case 3:
+                this.travelerForm.get('email').patchValue('');
+                break;
+        }
     }
 
     /**
@@ -1144,7 +1216,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
         if (evtObj.close)
             initialState.closeObj = { fun: () => { } };
 
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...this.configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
         if (evtObj.close) {
             this.subscriptionList.push(
                 this.bsModalService.onHidden
@@ -1155,33 +1227,23 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
                     )
             );
         }
-
     }
 
     /**
      * 항공 메인 이동
      */
     private goFlightMain() {
-        const path = `/${FlightCommon.PAGE_BOOKING_PAYMENT}/`;
-        this.router.navigate([path]);
+        this.router.navigate([FlightCommon.PAGE_MAIN]);
     }
 
     /*
      * 마이페이지 이동
      */
-
     private myBookingListLink() {
-        const rqInfo: any =
-        {
-            'selectCode': '2',  //항공:1, 호텔:2, 액티비티:3, 렌터카:4, 묶음할인:5
-            'stationTypeCode': environment.STATION_CODE,
-            'currency': 'KRW',
-            'language': 'KO',
-            'condition': {
-                'userNo': this.userInfo.user.userNo
-            }
-        };
-        const path = '/my-reservation-list/' + qs.stringify(rqInfo);
+        const rqInfo: RequestParam = RequestSet;
+        rqInfo.selectCode = FlightCommon.ITEM_RESERVE_CODE;
+        rqInfo.condition.userNo = this.userInfo.user.userNo;
+        const path = MyCommon.PAGE_RESERVATION_LIST + qs.stringify(rqInfo);
         this.router.navigate([path]);
     }
 
@@ -1211,11 +1273,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
                             }
                         }
                     };
-                    this.modalConfirmEvt(
-                        titleTxt,
-                        alertHtml,
-                        evtObj
-                    );
+                    this.modalConfirmEvt(titleTxt, alertHtml, evtObj);
                     return false;
                 }
 
@@ -1231,11 +1289,7 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
                             }
                         }
                     };
-                    this.modalConfirmEvt(
-                        titleTxt,
-                        null,
-                        evtObj
-                    );
+                    this.modalConfirmEvt(titleTxt, null, evtObj);
                 }
             });
 
@@ -1261,17 +1315,13 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
                             }
                         }
                     };
-                    this.modalConfirmEvt(
-                        titleTxt,
-                        alertHtml,
-                        evtObj
-                    );
+                    this.modalConfirmEvt(titleTxt, alertHtml, evtObj);
                 }
 
-                if (scheduleFlag)
+                if (scheduleFlag) {
                     this.goToBookingCompletePage();
+                }
             }
-
         } else {
             _.forEach(this.travelerForm.controls, (formVal, key) => {
                 if (!formVal.valid) {
@@ -1296,4 +1346,46 @@ export class FlightBookingInformationPageComponent extends BasePageComponent imp
         }
     }
 
+    private makeFareDiscount(): RequestParam {
+        const rq: RequestParam = _.cloneDeep(RequestSet);
+        rq.condition = {
+            deviceTypeCode: environment.DEVICE_TYPE,
+            itineraries: this.selectedList.map(
+                (item: any): any => {
+                    return {
+                        originCityCodeIata: item.originCityCodeIata,
+                        destinationCityCodeIata: item.destinationCityCodeIata,
+                        airlineCode: item.marketingAirlineCode,
+                        flightNo: item.flightNo,
+                        departureDate: item.originDate,
+                        departureTime: item.originTime,
+                        arrivalDate: item.destinationDate,
+                        arrivalTime: item.destinationTime,
+                        bookingClassCode: item.cabinClassCode,
+                    };
+                }
+            )
+        };
+
+        return rq;
+    }
+
+    private checkInstantPayment(): boolean {
+        let flag: boolean = true;
+        this.segHoldResultList.map(
+            (item: any, index: number) => {
+                if (index === 0) {
+                    if (item.result.instantPaymentYn) {
+                        flag = true;
+                    } else {
+                        flag = false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        );
+
+        return flag;
+    }
 }

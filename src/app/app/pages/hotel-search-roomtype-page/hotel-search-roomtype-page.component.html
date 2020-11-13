@@ -111,14 +111,10 @@
                                         <ng-template #roomOption>
                                             <span>포함내역 없음</span>
                                         </ng-template>
-                                        <a (click)="openRoomInfo(roomType)" class="btn-room" *ngIf="roomType?.additionalInfoYn === true">객실정보</a>
+                                        <a *ngIf="roomType?.additionalInfoYn === true" (click)="openRoomInfo(roomType)" class="btn-room">객실정보</a>
                                     </div>
                                     <div class="select">
-                                        <span class="resv-msg">38분전 예약됨</span>
-                                        <!-- <span *ngIf="roomType?.refundableYn;else elseRefundable" class="label sm type2">무료취소</span>
-                                        <ng-template #elseRefundable>
-                                            <span class="label sm type3">환불불가</span>
-                                        </ng-template> -->
+                                        <span *ngIf="roomType?.refundableYn === false" class="label sm type3">환불불가</span>
                                         <!--
                                         - 취소 마감일 보류
                                         -->

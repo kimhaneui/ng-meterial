@@ -14,14 +14,15 @@ import { ApiMypageService } from 'src/app/api/mypage/api-mypage.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
 import { JwtService } from 'src/app/common-source/services/jwt/jwt.service';
 
+import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
 import { BasePageComponent } from '../base-page/base-page.component';
 import { MyModalReservationQnaViewComponent } from './modal-components/my-modal-reservation-qna-view/my-modal-reservation-qna-view.component';
 import { MyModalReservationQnaWriteComponent } from './modal-components/my-modal-reservation-qna-write/my-modal-reservation-qna-write.component';
-import { environment } from '@/environments/environment';
-
-
 
 @Component({
     selector: 'app-my-reservation-qna-list-page',
@@ -52,7 +53,10 @@ export class MyReservationQnaListPageComponent extends BasePageComponent impleme
     userInfoRes: any;
     userNo: any;
     bookingItemCode: any;
-
+    type: any;
+    sampleList: any[];
+    convertedList: any[];
+    typeCodeCount: number;
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
         public titleService: Title,
@@ -64,6 +68,7 @@ export class MyReservationQnaListPageComponent extends BasePageComponent impleme
         private apiMypageService: ApiMypageService,
         private alertService: ApiAlertService,
         public jwtService: JwtService,
+
 
     ) {
         super(
@@ -97,6 +102,11 @@ export class MyReservationQnaListPageComponent extends BasePageComponent impleme
                     }
                 )
         );
+        this.route.queryParams.subscribe(params => {
+            this.bookingItemCode = params.bookingItemCode;
+            this.type = params.type;
+
+        });
         console.log(this.resolveData, ' this.resolveData');
         console.log(this.bookingItemCode, ' this.bookingItemCode');
 
@@ -149,10 +159,7 @@ export class MyReservationQnaListPageComponent extends BasePageComponent impleme
                 if (res.succeedYn) {
                     this.loadingBool = true;
                     this.dataModel = _.cloneDeep(res.result);
-                    console.log(this.dataModel, 'this.dataModel');
-
                     this.setViewModel();
-
                     return res;
 
                 } else {
@@ -160,7 +167,7 @@ export class MyReservationQnaListPageComponent extends BasePageComponent impleme
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
 
         if (this.totalCount === 0) {  //처음 로딩시에만 안보이게 처리하고 무한스크롤로 추가될때는 true상태로 진행됨
@@ -170,45 +177,49 @@ export class MyReservationQnaListPageComponent extends BasePageComponent impleme
     }
 
     private setViewModel() {
-        this.viewModel.list = this.dataModel.list;
+        this.sampleList = this.dataModel.list;
+        const tmp = [];
+        this.sampleList.forEach((item) => {
+
+            tmp[item.bookingItemCode] = tmp[item.bookingItemCode] || [];
+            tmp[item.bookingItemCode].push(item);
+        });
+
+        this.convertedList = tmp[this.bookingItemCode] || [];
+
+        this.typeCodeCount = this.convertedList.length;
         this.totalCount = this.dataModel.totalCount;
-        console.log(this.viewModel.list, 'viewModel.list');
+
 
     }
 
     // 고객문의 상세 모달
-    openQnaView() {
+    openQnaView(i) {
+        console.log(this.dataModel.list[i], 'datamodel');
+
         const initialState = {
-            bookingItemCode: this.dataModel.list.bookingItemCode,
-            boardMasterSeq: this.dataModel.list.boardMasterSeq,
-            requestDatetime: this.dataModel.list.requestDatetime,
-            questionTitle: this.dataModel.list.questionTitle,
-            questionDetail: this.dataModel.list.questionDetail,
-            answerDetail: this.dataModel.list.answerDetail,
-            handleFinishDatetime: this.dataModel.list.handleFinishDatetime,
+            bookingItemCode: this.dataModel.list[i].bookingItemCode,
+            boardMasterSeq: this.dataModel.list[i].boardMasterSeq,
+            requestDatetime: this.dataModel.list[i].requestDatetime,
+            questionTitle: this.dataModel.list[i].questionTitle,
+            questionDetail: this.dataModel.list[i].questionDetail,
+            answerDetail: this.dataModel.list[i].answerDetail,
+            handleFinishDatetime: this.dataModel.list[i].handleFinishDatetime,
+            consultingTypeCode: this.dataModel.list[i].consultingTypeCode,
 
         };
         console.log(initialState, 'initialState');
-
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: true
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalReservationQnaViewComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalReservationQnaViewComponent, { initialState, ...ConfigInfo });
     }
 
     // 고객문의 등록 모달
     openQnaWrite() {
         const initialState = {
-            bookingItemCode: this.dataModel.list.bookingItemCode,
+            bookingItemCode: this.bookingItemCode,
+            type: this.type
         };
         console.log(initialState, 'initialState');
-
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: true
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalReservationQnaWriteComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalReservationQnaWriteComponent, { initialState, ...ConfigInfo });
     }
 
     openCancelReservation() {
@@ -248,4 +259,6 @@ export class MyReservationQnaListPageComponent extends BasePageComponent impleme
         this.cateResult = [];
         this.increase();
     }
+
+
 }

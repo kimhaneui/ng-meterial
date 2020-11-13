@@ -1,4 +1,4 @@
-import {Action, combineReducers, createFeatureSelector, createSelector} from '@ngrx/store';
+import { Action, combineReducers, createFeatureSelector, createSelector } from '@ngrx/store';
 import * as rootReducers from 'src/app/store/store';
 import * as activityMainSearch from './activity-main-search/activity-main-search.reducer';
 

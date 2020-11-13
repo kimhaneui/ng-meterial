@@ -1,24 +1,22 @@
 import { Component, Inject, PLATFORM_ID, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, FormControl, FormArray, FormGroupDirective } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { Store, select } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 // store
 import { clearFlightModalDestinations } from '@/app/store/flight-common/flight-modal-destination/flight-modal-destination.actions';
 import { clearFlightModalCalendars } from '@/app/store/flight-common/flight-modal-calendar/flight-modal-calendar.actions';
 import { clearFlightModalTravelerOptions } from '@/app/store/flight-common/flight-modal-traveler-option/flight-modal-traveler-option.actions';
 import { clearFlightMainSearchs } from 'src/app/store/flight-main-page/flight-main-search/flight-main-search.actions';
+import { upsertFlightModalTravelerOption } from 'src/app/store/flight-common/flight-modal-traveler-option/flight-modal-traveler-option.actions';
+import { upsertFlightModalCalendar } from 'src/app/store/flight-common/flight-modal-calendar/flight-modal-calendar.actions';
 
 import * as FlightModalTravelerOptionSelector from '@/app/store/flight-common/flight-modal-traveler-option/flight-modal-traveler-option.selectors';
 import * as FlightModalDestinationSelector from '@/app/store/flight-common/flight-modal-destination/flight-modal-destination.selectors';
 import * as FlightModalCalendarSelector from '@/app/store/flight-common/flight-modal-calendar/flight-modal-calendar.selectors';
 import * as FlightMainSearchSelectors from 'src/app/store/flight-main-page/flight-main-search/flight-main-search.selectors';
-
-import { upsertFlightModalTravelerOption } from 'src/app/store/flight-common/flight-modal-traveler-option/flight-modal-traveler-option.actions';
-import { upsertFlightModalCalendar } from 'src/app/store/flight-common/flight-modal-calendar/flight-modal-calendar.actions';
 
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 
@@ -27,10 +25,16 @@ import * as qs from 'qs';
 import * as _ from 'lodash';
 
 import { RentUtilService } from '@/app/common-source/services/rent-com-service/rent-util.service';
+import { MajorDestinationService } from '@/app/common-source/services/major-destination/major-destination.service';
 
 import { environment } from '@/environments/environment';
 
+import { RequestParam } from '@/app/common-source/models/common/condition.model';
+import { majorDestinationRq } from '@/app/common-source/models/common/major-destination.model';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { StoreCategoryTypes } from '@/app/common-source/enums/store-category-types.enum';
+import { FlightCommon } from '@/app/common-source/enums/flight/flight-common.enum';
 
 import { ModalDestinationComponent } from '@/app/common-source/modal-components/modal-destination/modal-destination.component';
 import { FlightModalTravelerOptionComponent } from '@/app/common-source/modal-components/flight-modal-traveler-option/flight-modal-traveler-option.component';
@@ -46,12 +50,6 @@ import { BaseChildComponent } from '@/app/pages/base-page/components/base-child/
 export class FlightMainSearchComponent extends BaseChildComponent implements OnInit, OnDestroy {
     mainForm: FormGroup;                    // 폼
     @ViewChild('f') private formGroupDirective: FormGroupDirective;
-
-    modalTravelerOption$: Observable<any>;  // 좌석등급, 인원 수
-    modalOrigin$: Observable<any>;          // 목적지(출발)
-    modalDestination$: Observable<any>;     // 목적지(도착)
-    modalCalendar$: Observable<any>;        // 여행날짜
-
     destinationMdIndex: number = 0;         // 다구간 Index (여정 1,2,3,4)
 
     bsModalRef: BsModalRef;                 // 모달
@@ -60,18 +58,9 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
 
     // 여행 타입
     tripType: any = [
-        {
-            code: 'RT',
-            name: '왕복'
-        },
-        {
-            code: 'OW',
-            name: '편도'
-        },
-        {
-            code: 'MD',
-            name: '다구간'
-        }
+        { code: 'RT', name: '왕복' },
+        { code: 'OW', name: '편도' },
+        { code: 'MD', name: '다구간' }
     ];
 
     vm: any = {
@@ -105,7 +94,7 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
                 }
             ]
         },
-        // 좌석등급, 인원 수 ( 스토어 -> travelerStore)
+        // 좌석 등급, 인원 수( 스토어 -> travelerStore)
         travelerStore: {
             cabinClassTxt: '일반석, 성인1명',
             cabinClassNm: '일반석',
@@ -116,12 +105,8 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
         }
     };
 
-    // ngx-bootstrap config
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
     private subscriptionList: Subscription[];
+    private majorRq: RequestParam;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
@@ -130,11 +115,13 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
         private router: Router,
         private route: ActivatedRoute,
         private bsModalService: BsModalService,
-        private fb: FormBuilder
+        private fb: FormBuilder,
+        private majorDestinationS: MajorDestinationService
     ) {
         super(platformId);
 
         this.subscriptionList = [];
+        this.getMajorDestination();
     }
 
     ngOnInit() {
@@ -142,7 +129,6 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
         this.storeFlightCommonInit(); // store -> flight-common 초기화
         this.mainSearchAgainInit();
         this.formInit();        // 폼 초기화
-        this.storeInit();       // 스토어 초기화
         this.storeSubscribe();  // 스토어 구독
     }
 
@@ -155,6 +141,12 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
         );
     }
 
+    private getMajorDestination() {
+        this.majorRq = majorDestinationRq;
+        this.majorRq.condition.itemCategoryCode = FlightCommon.IITEM_CATEGORY_CODE;
+        this.majorDestinationS.getMajorDestination(this.majorRq);
+    }
+
     /**
      * 검색 결과 >  에러 > 다시 검색 클릭 >  메인 이동 시,
      * store 저장된 데이터 불러오기
@@ -164,21 +156,18 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
     mainSearchAgainInit() {
         this.subscriptionList.push(
             this.store
-                .pipe(
-                    select(FlightMainSearchSelectors.getSelectId('flight-search-again')),
-                    takeWhile(() => this.rxAlive)
-                )
+                .select(FlightMainSearchSelectors.getSelectId('flight-search-again'))
                 .subscribe(
                     (ev: any) => {
-                        console.info('FlightMainSearchSelectors', ev);
                         if (ev) {
+                            console.info('FlightMainSearchSelectors', ev);
                             const search: any = _.cloneDeep(ev.search);
                             ////--- 1. search form 데이터 세팅 ----------------------------------
 
                             // 항공편 종류 -----------------------------------------------
                             this.vm.tripTypeCode = search.tripTypeCode;
                             // 직항 여부 -------------------------------------------------
-                            this.vm.nonStop = search.nonStop;
+                            this.vm.nonStop = (search.nonStop === 'true') ? true : false;
 
                             // 출발지 목적지 ---------------------------------------------
                             const destination: any = search.trip.destination;
@@ -187,7 +176,6 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
                                 this.destValSet(originObj, 'origin');
                                 const destObj: any = _.pick(destination[0].dest, ['id', 'codeName', 'name', 'val']);
                                 this.destValSet(destObj, 'dest');
-
                             } else {
                                 const destArray: Array<any> = [];
                                 _.forEach(destination, (val: any) => {
@@ -260,44 +248,14 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
         );
     }
 
-    storeInit() {
-        /**
-         * 좌석옵션 스토어 셀렉트
-         */
-        this.modalTravelerOption$ = this.store.select(
-            FlightModalTravelerOptionSelector.getSelectId(['travelerOption'])
-        );
-
-        /**
-         * 여행날짜 스토어 셀렉트
-         */
-        this.modalCalendar$ = this.store.select(
-            FlightModalCalendarSelector.getSelectId(['flight-calendar'])
-        );
-
-        /**
-         * 목적지(출발) 스토어 셀렉트
-         */
-        this.modalOrigin$ = this.store.select(
-            FlightModalDestinationSelector.getSelectId(['origin'])
-        );
-
-        /**
-         * 목적지(도착) 스토어 셀렉트
-         */
-        this.modalDestination$ = this.store.select(
-            FlightModalDestinationSelector.getSelectId(['destination'])
-        );
-    }
-
     /**
      * 스토어 구독
      */
     storeSubscribe() {
         // 좌석 및 인원 옵션
         this.subscriptionList.push(
-            this.modalTravelerOption$
-                .pipe(takeWhile((() => this.rxAlive)))
+            this.store
+                .select(FlightModalTravelerOptionSelector.getSelectId(['travelerOption']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[travelOption$ > subscribe]', ev);
@@ -316,8 +274,8 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
 
         // 여행 날짜
         this.subscriptionList.push(
-            this.modalCalendar$
-                .pipe(takeWhile((ev => this.rxAlive)))
+            this.store
+                .select(FlightModalCalendarSelector.getSelectId(['flight-calendar']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalCalendar$ > subscribe]', ev);
@@ -331,8 +289,8 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
 
         // 출발 목적지
         this.subscriptionList.push(
-            this.modalOrigin$
-                .pipe(takeWhile((ev => this.rxAlive)))
+            this.store
+                .select(FlightModalDestinationSelector.getSelectId(['origin']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalOrigin$ > subscribe]', ev);
@@ -346,8 +304,8 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
 
         // 도착 목적지
         this.subscriptionList.push(
-            this.modalDestination$
-                .pipe(takeWhile((ev => this.rxAlive)))
+            this.store
+                .select(FlightModalDestinationSelector.getSelectId(['destination']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalDestination$ > subscribe]', ev);
@@ -378,17 +336,6 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
 
         const initialState: any = {
             storeId: $storeId,
-            majorDestinationRq: {
-                rq: {
-                    currency: 'KRW',
-                    language: 'KO',
-                    stationTypeCode: environment.STATION_CODE,
-                    condition: {
-                        itemCategoryCode: itemCategoryCode,
-                        compCode: environment.COMP_CODE
-                    }
-                }
-            },
             destinationRq: {
                 rq: {
                     currency: 'KRW',
@@ -405,7 +352,7 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
 
         console.info('[initialState]', initialState);
 
-        this.bsModalRef = this.bsModalService.show(ModalDestinationComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(ModalDestinationComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -563,12 +510,12 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
      * 폼 데이터 셋팅(vm => validation)
      */
     formDataSetting() {
-
         // vm 데이터 가공
         if (this.vm.tripTypeCode === 'RT' || this.vm.tripTypeCode === 'OW') { // 왕복, 편도
             const destination = this.vm.trip.destination;
-            if (destination.length > 2)
+            if (destination.length > 2) {
                 this.vm.trip.destination = _.slice(destination, 0, 2);
+            }
 
             if (this.vm.tripTypeCode === 'OW') {
                 this.vm.trip.destination[0].dateRange = '';
@@ -596,7 +543,7 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
             closeObj: null
         };
 
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...this.configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     dateValSet(ev: any) {
@@ -659,7 +606,6 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
         this.store.dispatch(clearFlightModalTravelerOptions());
     }
 
-
     /**
      * 출발지 선택
      * @param $index $index => 다구간 출/도착지 인덱스( 여정 1,2,3,4 )
@@ -680,7 +626,7 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
         this.goToFlightModalDestination('IC01', 'destination');
     }
 
-    onCalendar(calIdx?: number) {
+    onCalendar(_index?: number) {
         console.info('[달력 팝업]');
 
         const itemCategoryCode = 'IC01';
@@ -720,7 +666,7 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
             });
         }
 
-        for (const [idx, val] of this.vm.trip.destination.entries()) {
+        for (const [idx] of this.vm.trip.destination.entries()) {
             // 캘린더 선택값이 있으면
             if (!_.isEmpty(this.vm.trip.destination[idx].date)) {
 
@@ -731,7 +677,7 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
 
         console.info('[initialState]', initialState);
 
-        this.bsModalRef = this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -746,7 +692,7 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
             }
         };
 
-        this.bsModalRef = this.bsModalService.show(FlightModalTravelerOptionComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(FlightModalTravelerOptionComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -818,9 +764,11 @@ export class FlightMainSearchComponent extends BaseChildComponent implements OnI
 
     /**
      * 직항 유무
-     * @param e
+     * @param event
      */
-    onNonstop(e) {
+    onNonstop(event: MouseEvent) {
+        event && event.preventDefault();
+
         this.vm.nonStop = !this.vm.nonStop;
     }
 

@@ -81,7 +81,7 @@ export class FlightModalAgreementComponent extends BaseChildComponent implements
         this.dataModel = {};
         this.subscriptionList = [];
         this.viewModel = {
-            fareRuleList: this.rs.result.list.map(
+            fareRuleList: this.rs.map(
                 (listItem: any) => {
                     return {
                         segmentTitle: `${listItem.origin.cityNameLn} ${listItem.origin.airportCode} - ${listItem.destination.cityNameLn} ${listItem.destination.airportCode}`,
@@ -138,7 +138,7 @@ export class FlightModalAgreementComponent extends BaseChildComponent implements
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );

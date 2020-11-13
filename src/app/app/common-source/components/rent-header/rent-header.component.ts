@@ -1,17 +1,18 @@
 import { Component, Inject, Input, PLATFORM_ID, OnInit, OnDestroy } from '@angular/core';
 import { Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { take } from 'rxjs/operators';
-
 import { TranslateService } from '@ngx-translate/core';
+import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
+import * as _ from 'lodash';
 
 import { RentUtilService } from '../../services/rent-com-service/rent-util.service';
 import { CommonLayoutSideMenuService } from '../../services/common-layout-side-menu/common-layout-side-menu.service';
+import { BackBtnService } from '../../services/back-btn-service/back-btn.service';
 
 import { HeaderTypes } from '../../enums/header-types.enum';
 
 import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
-import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-rent-header',
@@ -34,7 +35,8 @@ export class RentHeaderComponent extends BaseChildComponent implements OnInit, O
         private location: Location,
         public commonLayoutSideMenuService: CommonLayoutSideMenuService,
         private router: Router,
-        private route: ActivatedRoute
+        private route: ActivatedRoute,
+        private backBtnS: BackBtnService
     ) {
         super(platformId);
         this.subscriptionList = [];
@@ -102,9 +104,14 @@ export class RentHeaderComponent extends BaseChildComponent implements OnInit, O
      */
     public onBackClick(event: any): void {
         event && event.preventDefault();
+        const backBtnUrl: any = this.headerConfig.step.backBtnUrl || '';
+        if (backBtnUrl === 'rent-main') {
+            this.backBtnS.goRentMainSearch(backBtnUrl, this.headerConfig.ctx.resolveData);
+        } else {
+            const bodyEl = document.getElementsByTagName('body')[0];
+            bodyEl.classList.remove('overflow-none');
+            this.location.back();
+        }
 
-        const bodyEl = document.getElementsByTagName('body')[0];
-        bodyEl.classList.remove('overflow-none');
-        this.location.back();
     }
 }

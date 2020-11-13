@@ -1,35 +1,18 @@
-import { Component, Inject, PLATFORM_ID, OnInit, OnDestroy } from '@angular/core';
-import { isPlatformBrowser, isPlatformServer } from '@angular/common';
+import { Component, Inject, PLATFORM_ID, ViewChild, ElementRef } from '@angular/core';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit, OnDestroy {
-    isBrowser: boolean = false;
-    isServer: boolean = false;
-    rxAlive: boolean = true;
+export class AppComponent {
+    @ViewChild('route', { read: ElementRef }) private routeElement: ElementRef;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any
     ) { }
 
-    ngOnInit() {
-        if (isPlatformBrowser(this.platformId)) {
-            this.isBrowser = true;
-        }
-
-        if (isPlatformServer(this.platformId)) {
-            this.isServer = true;
-        }
-
-        if (this.isBrowser) {
-            console.info('[app.component > ngOnInit > window]', window);
-        }
-    }
-
-    ngOnDestroy() {
-        this.rxAlive = false;
+    public resetPosition() {
+        this.routeElement.nativeElement.scrollTop = 0;
     }
 }

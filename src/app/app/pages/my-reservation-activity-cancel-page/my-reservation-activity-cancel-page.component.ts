@@ -61,7 +61,7 @@ export class MyReservationActivityCancelPageComponent extends BasePageComponent 
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }

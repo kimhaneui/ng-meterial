@@ -3,7 +3,7 @@ export interface Booker {
     name: string;
     email: string;
     mobileNo: string;
-    picUno: number;
+    picUno?: number;
 }
 
 export interface Travelers {
@@ -12,7 +12,6 @@ export interface Travelers {
     gender: string;
     ageTypeCode: string;
     nationalityCode: string;
-
     userNo?: number;
     bookingTravelerCode?: string;
     lastNameLn?: string;

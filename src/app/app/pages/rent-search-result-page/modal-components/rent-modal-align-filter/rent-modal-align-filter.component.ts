@@ -1,10 +1,9 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import * as rentSearchResultPageSelectors from '../../../../store/rent-search-result-page/rent-search-result-page/rent-search-result-page.selectors';
 
@@ -59,8 +58,6 @@ export class RentModalAlignFilterComponent extends BaseChildComponent implements
     };
 
     rxAlive: boolean = true;
-    rentListRq$: Observable<any>; // 렌터카 검색 request
-    rentListRs$: Observable<any>; // 렌터카 검색 결과
 
     loadingBool: boolean = false;
 
@@ -85,8 +82,6 @@ export class RentModalAlignFilterComponent extends BaseChildComponent implements
         const bodyEl = document.getElementsByTagName('body')[0];
         bodyEl.classList.add('overflow-none');
         this.mainFormCreate();
-        this.vmInit();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -101,20 +96,10 @@ export class RentModalAlignFilterComponent extends BaseChildComponent implements
         );
     }
 
-    vmInit() {
-    }
-
-    observableInit() {
-        this.rentListRq$ = this.store
-            .pipe(select(rentSearchResultPageSelectors.getSelectId('rent-list-rq-info')));
-        this.rentListRs$ = this.store
-            .pipe(select(rentSearchResultPageSelectors.getSelectId('rent-list-rs')));
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.rentListRq$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(rentSearchResultPageSelectors.getSelectId('rent-list-rq-info'))
                 .subscribe(
                     (ev: any) => {
                         console.info('[rentListRq$ > subscribe]', ev);
@@ -130,8 +115,8 @@ export class RentModalAlignFilterComponent extends BaseChildComponent implements
         );
 
         this.subscriptionList.push(
-            this.rentListRs$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(rentSearchResultPageSelectors.getSelectId('rent-list-rs'))
                 .subscribe(
                     (ev: any) => {
                         console.info('[rentListRs$ > subscribe]', ev);
@@ -172,7 +157,9 @@ export class RentModalAlignFilterComponent extends BaseChildComponent implements
         bodyEl.classList.remove('overflow-none');
         this.bsModalRef.hide();
     }
-    onCloseClick(e) {
+    onCloseClick(event: MouseEvent) {
+        event && event.preventDefault();
+
         console.info('모달 닫기');
         this.modalClose();
     }

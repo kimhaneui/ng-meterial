@@ -28,7 +28,7 @@ export class AirtelSearchResultPageService {
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             }
             );
         return data;
@@ -50,7 +50,7 @@ export class AirtelSearchResultPageService {
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             },
             );
         return data;

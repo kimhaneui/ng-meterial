@@ -34,7 +34,6 @@ export class MyReservationRentCancelPageComponent extends BasePageComponent impl
     rxAlive: boolean = true;
 
     travelers: Array<any>;
-    configInfo: ModalOptions;
     RentDetail: any;
     resolveData: any;
     apirentSvc: any;
@@ -95,7 +94,7 @@ export class MyReservationRentCancelPageComponent extends BasePageComponent impl
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -168,7 +167,7 @@ export class MyReservationRentCancelPageComponent extends BasePageComponent impl
                 }
             }
         };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...this.configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
         // this.flightResvCancel(rqInfo);
         // const path = '/my-reservation-flight-detail/' + qs.stringify(rqInfo);
         // this.router.navigate([path], {relativeTo : this.route});
@@ -187,7 +186,7 @@ export class MyReservationRentCancelPageComponent extends BasePageComponent impl
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         ];

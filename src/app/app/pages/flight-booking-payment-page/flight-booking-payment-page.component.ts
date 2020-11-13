@@ -23,8 +23,8 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 
 import { environment } from '@/environments/environment';
 
-import { CardMonthSet, CardSet, PaymentStyle } from '@/app/common-source/models/booking.model';
 import { PaymnetStyleSet, UseCardSet } from './models/flight-booking-payment-page.model';
+import { CardMonthSet, CardSet, PaymentStyle } from '@/app/common-source/models/common/booking.model';
 
 import { HeaderTypes } from 'src/app/common-source/enums/header-types.enum';
 import { TravelerTypeKr } from '@/app/common-source/enums/common/traveler-type.enum';
@@ -123,7 +123,6 @@ export class FlightBookingPaymentPageComponent extends BasePageComponent impleme
         this.addPaymnet();
         this.viewModel.passengerFareList = this.parsePassengerFare();
         this.viewModel.passengerCount = this.viewModel.passengerFareList.length;
-        console.log(this.dataModel)
         this.headerSet(this.dataModel.itiineraryRq);
     }
 
@@ -383,7 +382,6 @@ export class FlightBookingPaymentPageComponent extends BasePageComponent impleme
                 bookingItemCode: this.dataModel.response.result.bookingItems[0].bookingItemCode,
                 cards: this.payment.controls.map(
                     (item: any) => {
-
                         return {
                             ...item.value,
                             ...{
@@ -426,7 +424,7 @@ export class FlightBookingPaymentPageComponent extends BasePageComponent impleme
                                 bookingItemCode: request.condition.bookingItemCode
                             };
 
-                            this.modelSet('flight-booking-complete', flightRev);
+                            this.modelSet(FlightStore.STORE_FLIGHT_BOOKING_COMPLETE, flightRev);
                             this.location.replaceState('/flight-main'); // 예약 완료 페이지에서 뒤로가기시 메인페이지로 가기
                             this.router.navigate(['/flight-booking-complete'], { relativeTo: this.route });
                         } else {
@@ -434,7 +432,7 @@ export class FlightBookingPaymentPageComponent extends BasePageComponent impleme
                         }
                     },
                     (err: any) => {
-                        // this.alertService.showApiAlert(err);
+                        // this.alertService.showApiAlert(err.error.message);
                         console.info('[error]', JSON.stringify(err));
                         const initialState = {
                             titleTxt: err,

@@ -121,7 +121,7 @@ export class RentModalAgreementComponent extends BaseChildComponent implements O
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );

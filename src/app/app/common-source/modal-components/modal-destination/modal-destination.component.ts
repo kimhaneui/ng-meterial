@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit, PLATFORM_ID, ElementRef, OnDestroy, ViewChild, AfterViewInit } from '@angular/core';
-import { debounceTime, distinctUntilChanged, map, switchMap, tap, filter, finalize } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, switchMap, tap, filter, finalize, retry } from 'rxjs/operators';
 import { fromEvent, Subscription } from 'rxjs';
 
 import { Store } from '@ngrx/store';
@@ -15,6 +15,8 @@ import { upsertActivityModalDestination } from '@app/store/activity-common/activ
 // 묶음할인
 import { upsertAirtelModalDestination } from '@app/store/airtel-common/airtel-modal-destination/airtel-modal-destination.actions';
 
+import * as CommonMajorDestinationSelector from '@/app/store/common/common-major-destination/common-major-destination.selectors';
+
 import { TranslateService } from '@ngx-translate/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 
@@ -22,14 +24,16 @@ import * as _ from 'lodash';
 
 import { ApiCommonService } from '../../../api/common/api-common.service';
 import { StorageService } from '../../services/storage/storage.service';
+import { ApiAlertService } from '../../services/api-alert/api-alert.service';
 
 import { DestinationInfo } from './models/destination-info';
 import { MajorDestination } from './models/major-destination';
 
 import { DestinationType } from '../../enums/destinationType.enum';
+import { CommonStore } from '../../enums/common/common-store.enum';
+import { DestinationStore } from '../../enums/destination/destination-store.enum';
 
 import { BaseChildComponent } from '../../../pages/base-page/components/base-child/base-child.component';
-import { ApiAlertService } from '../../services/api-alert/api-alert.service';
 
 @Component({
     selector: 'app-modal-destination',
@@ -40,7 +44,6 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
     @ViewChild('destinationSearchInput') destinationSearchInput: ElementRef;
 
     storeId: string;
-    majorDestinationRq: any;
     destinationRq: any;
 
     // 모델 id 설정
@@ -163,7 +166,7 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
                 this.placeholderText = '도시명 입력';
                 break;
 
-            case 'search':
+            case DestinationStore.STORE_ACTIVITY:
                 this.viewPageName = 'activity';
                 this.headerTitle = '액티비티 검색';
                 this.placeholderText = '여행지 또는 상품을 검색';
@@ -196,35 +199,40 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
     modalInit() {
         // 주요 도시 목록 데이터 가져오기
         this.subscriptionList.push(
-            this.apiCommonService.POST_MAJOR_DESTINATION(this.majorDestinationRq.rq)
+            this.store
+                .select(CommonMajorDestinationSelector.getSelectId(CommonStore.STORE_MAJOR_DESTINATION_RS))
                 .subscribe(
-                    (res: any) => {
-                        console.info('[주요 도시 목록 데이터 가져오기 > res]', res.result);
-                        if (res.succeedYn) {
-                            this.majorDestinationInfo = res.result;
+                    (ev: any) => {
+                        if (ev) {
+                            console.info('[주요 도시 목록 데이터 가져오기 > res]', ev.result);
+                            const res: any = ev.result;
+                            if (res.succeedYn) {
+                                this.majorDestinationInfo = res.result;
 
-                            const recentData = this.storageS.getItem('local', 'recent');
-                            if (_.has(recentData, ['cities', this.viewPageName])) {
-                                recentData.cities[this.viewPageName].map(
-                                    (item: any, key: any) => {
-                                        if (_.has(item, 'cityCode')) {
-                                            item.index = key;
-                                            this.recentList.push(item);
+                                const recentData = this.storageS.getItem('local', 'recent');
+                                if (_.has(recentData, ['cities', this.viewPageName])) {
+                                    recentData.cities[this.viewPageName].map(
+                                        (item: any, key: any) => {
+                                            if (_.has(item, 'cityCode')) {
+                                                item.index = key;
+                                                this.recentList.push(item);
+                                            }
                                         }
+                                    );
+
+                                    if (this.recentList.length > 1) {
+                                        this.recentList = _.orderBy(this.recentList, ['index'], ['desc']);
                                     }
-                                );
 
-                                if (this.recentList.length > 1)
-                                    this.recentList = _.orderBy(this.recentList, ['index'], ['desc']);
-
-                                console.info('recentList', this.recentList);
+                                    console.info('recentList', this.recentList);
+                                }
+                            } else {
+                                this.alertService.showApiAlert(res.errorMessage);
                             }
-                        } else {
-                            this.alertService.showApiAlert(res.errorMessage);
                         }
                     },
-                    (error: any) => {
-                        this.alertService.showApiAlert(error.error.errorMessage);
+                    (err: any) => {
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -276,7 +284,8 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
                         (value: string): any => {
                             this.realSearchWord = value;
                             const rq = this.searchInitModelInit(value);
-                            return this.apiCommonService.POST_DESTINATION(rq);
+                            return this.apiCommonService.POST_DESTINATION(rq)
+                                .pipe(retry(2));
                         }
                     ),
                     finalize(() => this.hideLoading())
@@ -293,7 +302,7 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
                         this.hideLoading();
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -325,8 +334,6 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
         resList.map((item: any) => {
             this.destinationInfoValLeng = this.destinationInfoValLeng + item.val.length;
         });
-
-
     }
 
     /**
@@ -553,7 +560,7 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
                 );
                 break;
 
-            case 'search':
+            case DestinationStore.STORE_ACTIVITY:
                 this.store.dispatch(
                     upsertActivityModalDestination({ activityModalDestination: data })
                 );
@@ -595,7 +602,7 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
         };
 
         switch (this.storeId) {
-            case 'search':
+            case DestinationStore.STORE_ACTIVITY:
                 newModel.type = {
                     serviceCities: 'CITY',
                     serviceActivities: 'DETAIL',
@@ -613,6 +620,22 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
         }
 
         return { ...data, ...newModel };
+    }
+
+    private parseItem(item: any, subItem: any) {
+        switch (this.storeId) {
+            case 'origin':
+            case 'destination':
+                if (item.destinationTypeCode === 'A') {
+                    subItem = {
+                        airportCode: item.destinationCode
+                    };
+                    item.destinationCode = item.cityCodeIata;
+                }
+                break;
+        }
+
+        return { item: item, subItem: subItem };
     }
 
     modalClose() {
@@ -645,85 +668,87 @@ export class ModalDestinationComponent extends BaseChildComponent implements OnI
     public onResultClick(event: any, type: string, item: any, subItem?: any): void {
         event && event.preventDefault();
 
+        const returnItem: any = this.parseItem(_.cloneDeep(item), subItem);
+        const newItem: any = returnItem.item;
+        const newSubItem: any = returnItem.subItem;
         const recent = {
-            type: type === 'recent' ? item.type : type,
-            countryCode: item.countryCode,
-            countryNameLn: item.countryNameLn,
-            countryNameEn: item.countryNameEn,
+            type: type === 'recent' ? newItem.type : type,
+            countryCode: newItem.countryCode,
+            countryNameLn: newItem.countryNameLn,
+            countryNameEn: newItem.countryNameEn,
             cityNameLn: {
-                quick: item.destinationNameLn,
-                cities: item.cityNameLn,
-                cityAirport: item.cityNameLn,
-                regions: item.regionNameLn,
-                airports: item.airportNameLn,
-                pois: item.cityNameLn,
-                hotels: item.cityNameLn,
-                vehicles: item.cityNameLn,
-                recent: item.cityNameLn,
-                serviceCities: item.cityNameLn,
-                serviceActivities: item.cityNameLn
+                quick: newItem.destinationNameLn,
+                cities: newItem.cityNameLn,
+                cityAirport: newItem.cityNameLn,
+                regions: newItem.regionNameLn,
+                airports: newItem.airportNameLn,
+                pois: newItem.cityNameLn,
+                hotels: newItem.cityNameLn,
+                vehicles: newItem.cityNameLn,
+                recent: newItem.cityNameLn,
+                serviceCities: newItem.cityNameLn,
+                serviceActivities: newItem.cityNameLn
             }[type],
             cityNameEn: {
-                quick: item.destinationNameEn,
-                cities: item.cityNamEn,
-                regions: item.regionNameEn,
-                airports: item.airportNameEn,
-                pois: item.cityNameEn,
-                hotels: item.cityNameEn,
-                vehicles: item.cityNameEn,
-                recent: item.cityNameEn,
-                serviceCities: item.cityNameEn,
-                serviceActivities: item.cityNameEn
+                quick: newItem.destinationNameEn,
+                cities: newItem.cityNamEn,
+                regions: newItem.regionNameEn,
+                airports: newItem.airportNameEn,
+                pois: newItem.cityNameEn,
+                hotels: newItem.cityNameEn,
+                vehicles: newItem.cityNameEn,
+                recent: newItem.cityNameEn,
+                serviceCities: newItem.cityNameEn,
+                serviceActivities: newItem.cityNameEn
             }[type],
             cityCode: {
-                quick: item.destinationCode,
-                cities: item.cityCodeIata,
-                regions: item.cityCodeIata,
-                airports: item.regionCode,
-                pois: item.cityCodeIata,
-                hotels: item.cityCodeIata,
-                vehicles: item.cityCodeIata,
-                recent: item.cityCode,
-                serviceCities: item.cityCodeIata,
-                serviceActivities: item.cityCodeIata
+                quick: newItem.destinationCode,
+                cities: newItem.cityCodeIata,
+                regions: newItem.cityCodeIata,
+                airports: newItem.regionCode,
+                pois: newItem.cityCodeIata,
+                hotels: newItem.cityCodeIata,
+                vehicles: newItem.cityCodeIata,
+                recent: newItem.cityCode,
+                serviceCities: newItem.cityCodeIata,
+                serviceActivities: newItem.cityCodeIata
             }[type],
             name: {
-                quick: item.destinationNameLn,
-                cities: item.cityNameLn,
-                cityAirport: item.cityNameLn,
-                regions: item.regionNameLn,
-                airports: item.airportNameLn,
-                pois: item.poiNameEn,
-                hotels: item.hotelNameLn,
-                vehicles: item.cityNameLn,
-                recent: item.name,
-                serviceCities: item.cityNameLn,
-                serviceActivities: item.activityNameLn
+                quick: newItem.destinationNameLn,
+                cities: newItem.cityNameLn,
+                cityAirport: newItem.cityNameLn,
+                regions: newItem.regionNameLn,
+                airports: newItem.airportNameLn,
+                pois: newItem.poiNameEn,
+                hotels: newItem.hotelNameLn,
+                vehicles: newItem.cityNameLn,
+                recent: newItem.name,
+                serviceCities: newItem.cityNameLn,
+                serviceActivities: newItem.activityNameLn
             }[type],
             val: {
-                quick: item.destinationCode,
-                cities: item.cityCodeIata,
-                cityAirport: item.cityCodeIata,
-                regions: item.regionCode,
-                airports: item.regionCode,
-                pois: item.poiSeq,
-                hotels: item.hotelCode,
-                vehicles: item.cityCodeIata,
-                recent: item.val,
-                serviceCities: item.cityCode,
-                serviceActivities: item.activityMasterSeq
+                quick: newItem.destinationCode,
+                cities: newItem.cityCodeIata,
+                cityAirport: newItem.cityCodeIata,
+                regions: newItem.regionCode,
+                airports: newItem.regionCode,
+                pois: newItem.poiSeq,
+                hotels: newItem.hotelCode,
+                vehicles: newItem.cityCodeIata,
+                recent: newItem.val,
+                serviceCities: newItem.cityCode,
+                serviceActivities: newItem.activityMasterSeq
             }[type]
         };
 
         // 업데이트 모델 만들기
         this.updateModel = this.makeUpdateModel(recent);
 
-        if (subItem) {
-            this.updateModel.airports = [subItem];
+        if (newSubItem) {
+            this.updateModel.airports = [newSubItem];
         }
 
         this.storageS.makeRecentData('local', recent, 'cities', this.viewPageName);
-
         this.upsertOne(this.updateModel);
         this.modalClose();
     }

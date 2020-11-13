@@ -5,20 +5,21 @@ import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 
 import { TranslateService } from '@ngx-translate/core';
-import { BsModalService, BsModalRef, ModalOptions } from 'ngx-bootstrap/modal';
+import { LoadingBarService } from '@ngx-loading-bar/core';
+import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 
 import * as _ from 'lodash';
 import * as moment from 'moment';
+
 
 import { SeoCanonicalService } from 'src/app/common-source/services/seo-canonical/seo-canonical.service';
 import { ApiMypageService } from 'src/app/api/mypage/api-mypage.service';
 import { ApiBookingService } from '@/app/api/booking/api-booking.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
 
-import { LoadingBarService } from '@ngx-loading-bar/core';
-import { MyModalFlightBookerEditComponent } from '../my-reservation-flight-detail-page/modal-components/my-modal-flight-booker-edit/my-modal-flight-booker-edit.component';
-
 import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
@@ -28,6 +29,7 @@ import { MyModalActivityVoucherComponent } from './modal-components/my-modal-act
 import { MyModalActivityWifiComponent } from './modal-components/my-modal-activity-wifi/my-modal-activity-wifi.component';
 import { MyModalActivityBookerModifyComponent } from './modal-components/my-modal-activity-booker-modify/my-modal-activity-booker-modify.component';
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
+import { MyModalFlightBookerEditComponent } from '../my-reservation-flight-detail-page/modal-components/my-modal-flight-booker-edit/my-modal-flight-booker-edit.component';
 
 @Component({
     selector: 'app-my-reservation-activity-detail-page',
@@ -65,10 +67,6 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
     dDay: any;
     private subscriptionList: Subscription[];
 
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
         public titleService: Title,
@@ -130,7 +128,7 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -182,7 +180,7 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -242,11 +240,7 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
             ],
             title: 'Modal with component',
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: true,
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalFlightBookerEditComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalFlightBookerEditComponent, { initialState, ...ConfigInfo });
     }
 
     onGoToActivityMain() {
@@ -288,12 +282,7 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
                 },
             },
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false,
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo, });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo, });
     }
     activityBookedCancel() {
         // const tgItem = $resItem;
@@ -321,7 +310,7 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -334,7 +323,7 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
             title: 'Modal with component'
         };
 
-        this.bsModalRef = this.bsModalService.show(MyModalActivityTravelInsuComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalActivityTravelInsuComponent, { initialState, ...ConfigInfo });
     }
 
     // 액티비티 바우처 모달
@@ -355,7 +344,7 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
         const initialState: any = {
             rq: rqInfo
         };
-        this.bsModalRef = this.bsModalService.show(MyModalActivityVoucherComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalActivityVoucherComponent, { initialState, ...ConfigInfo });
     }
 
     // 액티비티 wifi-usim 모달
@@ -367,7 +356,7 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
             title: 'Modal with component'
         };
 
-        this.bsModalRef = this.bsModalService.show(MyModalActivityWifiComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalActivityWifiComponent, { initialState, ...ConfigInfo });
     }
 
     // 액티비티 예약자변경 모달
@@ -379,7 +368,7 @@ export class MyReservationActivityDetailPageComponent extends BasePageComponent 
             title: 'Modal with component'
         };
 
-        this.bsModalRef = this.bsModalService.show(MyModalActivityBookerModifyComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalActivityBookerModifyComponent, { initialState, ...ConfigInfo });
     }
 
     openOneonon() {

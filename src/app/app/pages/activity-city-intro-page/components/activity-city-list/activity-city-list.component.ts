@@ -24,13 +24,12 @@ export class ActivityCityListComponent extends BaseChildComponent implements OnI
     @Input() private target: string;
     public viewModel: ViewModel;
     private dataModel: any;
-    private observableList: any;
     private subscribeList: Subscription[];
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        private store: Store<any>,
         public translateService: TranslateService,
+        private store: Store<any>,
         private router: Router
     ) {
         super(platformId);
@@ -60,26 +59,8 @@ export class ActivityCityListComponent extends BaseChildComponent implements OnI
             response: {},
             cityName: {}
         };
-        this.observableList = {
-            activityCityRs$: null as Observable<any>,
-            activityCityName$: null as Observable<any>,
-        };
         this.subscribeList = [];
-        this.observableInit();
         this.subscribeInit();
-    }
-
-    /**
-     * observableInit
-     * 감시 초기화
-     */
-    private observableInit(): void {
-        this.observableList = {
-            activityCityRs$: this.store
-                .pipe(select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_RS))),
-            activityCityName$: this.store
-                .pipe(select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_CITYNAME)))
-        };
     }
 
     /**
@@ -89,8 +70,10 @@ export class ActivityCityListComponent extends BaseChildComponent implements OnI
     private subscribeInit(): void {
         this.subscribeList = [
             combineLatest(
-                this.observableList.activityCityRs$,
-                this.observableList.activityCityName$
+                this.store
+                    .select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_RS)),
+                this.store
+                    .select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_CITYNAME))
             )
                 .subscribe(
                     ([res1, res2]): void => {

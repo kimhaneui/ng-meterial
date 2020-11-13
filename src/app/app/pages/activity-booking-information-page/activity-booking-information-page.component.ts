@@ -9,7 +9,6 @@ import { distinct, finalize } from 'rxjs/operators';
 import { Store, select } from '@ngrx/store';
 
 import { upsertActivitySessionStorage } from '@app/store/activity-common/activity-session-storage/activity-session-storage.actions';
-import { upsertActivityBookingInformationPage } from '@app/store/activity-booking-information-page/activity-booking-information-page/activity-booking-information-page.actions';
 
 import * as commonUserInfoSelectors from '@/app/store/common/common-user-info/common-user-info.selectors';
 
@@ -30,7 +29,8 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 import { ApiBookingService } from '../../api/booking/api-booking.service';
 
 import { DeliveryList, GenderSet } from './models/activity-booking-information.model';
-import { CondisionSet, Condition } from '@/app/common-source/models/common/condition.model';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+import { RequestSet, RequestParam } from '@/app/common-source/models/common/condition.model';
 
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 import { UserStore } from '@/app/common-source/enums/common/user-store.enum';
@@ -48,8 +48,8 @@ import { CommonModalAlertComponent } from '@/app/common-source/modal-components/
     encapsulation: ViewEncapsulation.None
 })
 export class ActivityBookingInformationPageComponent extends BasePageComponent implements OnInit, OnDestroy {
-    headerType: any;
-    headerConfig: any;
+    public headerType: any;
+    public headerConfig: any;
 
     private dataModel: any;
     private subscriptionList: Subscription[];
@@ -131,7 +131,7 @@ export class ActivityBookingInformationPageComponent extends BasePageComponent i
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -224,6 +224,8 @@ export class ActivityBookingInformationPageComponent extends BasePageComponent i
                         deliveryAddress: new FormControl(''),
                         conditionCodedData: new FormControl(''),
                         neededInfos: this.fb.array([]),
+                        productAmount: new FormControl(''),
+                        discountAmount: new FormControl('')
                     })
                 ]
             ),
@@ -322,12 +324,12 @@ export class ActivityBookingInformationPageComponent extends BasePageComponent i
                             }
                         } catch (err) {
                             console.log(err);
-                            this.alertService.showApiAlert(err);
+                            this.alertService.showApiAlert(err.error.message);
                         }
                     },
                     (err: any) => {
                         console.log(err);
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -350,10 +352,7 @@ export class ActivityBookingInformationPageComponent extends BasePageComponent i
                                 // 사용자 답변
                                 userInputValue: new FormControl(
                                     '',
-                                    [
-                                        Validators.required,
-                                        Validators.maxLength(50)
-                                    ]
+                                    [Validators.required, Validators.maxLength(50)]
                                 ),
                                 // 해당 값이 Y이면 this.itemTravelers의 neededInfos의 모든 값을 넣어줘야함
                                 perTravelerYn: new FormControl(item.perTravelerYn)
@@ -380,7 +379,9 @@ export class ActivityBookingInformationPageComponent extends BasePageComponent i
             promotionSeq: '',
             deliveryZipCode: '',
             deliveryAddress: '',
-            conditionCodedData: this.dataModel.conditionResponse.conditionCodedData
+            conditionCodedData: this.dataModel.conditionResponse.conditionCodedData,
+            productAmount: this.dataModel.optionView.productAmount,
+            discountAmount: this.dataModel.optionView.discountAmount
         });
     }
 
@@ -522,7 +523,7 @@ export class ActivityBookingInformationPageComponent extends BasePageComponent i
             }
         );
 
-        const rq: Condition = CondisionSet;
+        const rq: RequestParam = _.cloneDeep(RequestSet);
         rq.transactionSetId = this.dataModel.transactionSetId;
         rq.condition = {
             activityItems: formData.activityItems.map(
@@ -594,45 +595,36 @@ export class ActivityBookingInformationPageComponent extends BasePageComponent i
             id: ActivityStore.STORE_BOOKING_RQ,
             result: _.cloneDeep(rq)
         });
+        const newRq: RequestParam = _.cloneDeep(rq);
+        newRq.condition = _.omit(rq.condition, ['deviceTypeCode', 'domainAddress', 'booker', 'travelers']);
 
         this.subscriptionList.push(
-            this.apiBookingS.POST_BOOKING(rq)
+            this.apiBookingS.POST_BOOKING_DISCOUNT_INFO(newRq)
                 .subscribe(
                     (res: any) => {
-                        try {
-                            console.info('[예약완료 결제로 가잣 > res]', res.result);
-                            if (res.succeedYn) {
-                                this.upsertOneSession({
-                                    id: ActivityStore.STORE_BOOKING_RS,
-                                    result: res.result,
-                                });
+                        console.info('[예약진행 > res]', res);
+                        if (res.succeedYn) {
+                            this.upsertOneSession({
+                                id: ActivityStore.STORE_BOOKING_RS,
+                                result: res.result,
+                            });
 
-                                this.location.replaceState(ActivityCommon.PAGE_MAIN); // 예약 완료 페이지에서 뒤로가기시 메인페이지로 가기
-                                this.router.navigate([ActivityCommon.PAGE_BOOKING_PAYMENT], { relativeTo: this.route });
-                            } else {
-                                this.alertService.showApiAlert(res.errorMessage);
-                            }
-                        } catch (err) {
-                            this.alertService.showApiAlert(err);
+                            this.location.replaceState(ActivityCommon.PAGE_MAIN); // 예약 완료 페이지에서 뒤로가기시 메인페이지로 가기
+                            this.router.navigate([ActivityCommon.PAGE_BOOKING_PAYMENT], { relativeTo: this.route });
+                        } else {
+                            this.alertService.showApiAlert(res.errorMessage);
                         }
                     },
                     (err: any) => {
-                        //this.alertService.showApiAlert(err);
-                        this.bookingFailEvt();
+                        this.alertService.showApiAlert(err.error.message);
+                    },
+                    () => {
+                        this.bookingLoading = false;
                     }
                 )
         );
     }
 
-    /**
-    * 데이터 추가 | 업데이트
-    * action > key 값을 확인.
-    */
-    private upsertOne(data: any) {
-        this.store.dispatch(
-            upsertActivityBookingInformationPage({ activityBookingInformationPage: _.cloneDeep(data) })
-        );
-    }
 
     private upsertOneSession(data: any) {
         this.store.dispatch(
@@ -865,13 +857,7 @@ export class ActivityBookingInformationPageComponent extends BasePageComponent i
             })
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalService.show(ActivityModalAgreementComponent, { initialState, ...configInfo });
+        this.bsModalService.show(ActivityModalAgreementComponent, { initialState, ...ConfigInfo });
     }
 
     public isValidError(control: AbstractControl): boolean {

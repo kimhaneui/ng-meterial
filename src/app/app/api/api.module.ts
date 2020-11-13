@@ -6,13 +6,15 @@ import { JwtModule } from '@auth0/angular-jwt';
 
 import { ApiTestService } from './api-test/api-test.service';
 
+import { RestCallService } from './rest-call/rest-call.service';
+
 import { environment } from '@/environments/environment';
 
 export function tokenGetter() {
     console.info('[jwtOptionsFactory > tokenGetter]');
 
-    if (window.localStorage.getItem(environment.JWT_OPTION.TOKEN_KEY)) {
-        return window.localStorage.getItem(environment.JWT_OPTION.TOKEN_KEY);
+    if (localStorage.getItem(environment.JWT_OPTION.TOKEN_KEY)) {
+        return localStorage.getItem(environment.JWT_OPTION.TOKEN_KEY);
     } else {
         return '';
     }
@@ -37,6 +39,7 @@ export function tokenGetter() {
         )
     ],
     providers: [
+        RestCallService,
         ApiTestService
     ]
 })

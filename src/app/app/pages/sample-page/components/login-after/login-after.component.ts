@@ -99,7 +99,7 @@ export class LoginAfterComponent implements OnInit {
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
 
         /**

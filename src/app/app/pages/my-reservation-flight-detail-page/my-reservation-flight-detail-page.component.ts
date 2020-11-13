@@ -17,6 +17,8 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 
 import { environment } from '@/environments/environment';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 
 import { BasePageComponent } from '../base-page/base-page.component';
@@ -60,7 +62,6 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     instantTicketing: boolean;
     howMany: any = '';
     pageReLoad: any;
-    configInfo: ModalOptions;
     sessionRQ: any;
 
     flightDetail: any;
@@ -131,7 +132,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -154,7 +155,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     }
 
     // sessionInit() {
-    //     const sessionItem = JSON.parse(sessionStorage.getItem('flight-common'));
+    //     const sessionItem = JSON.parse(sessionStorage.getItem(FlightStore.STORE_FLIGHT_COMMON));
     //     if (!_.isEmpty(sessionItem.flightSessionStorages.entities)) {
     //       this.sessionRQ = sessionItem.flightSessionStorages.entities["flight-booking-complete"].option;
     //     }
@@ -173,7 +174,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
         console.info('[3. API 호출 끝]');
     }
@@ -199,7 +200,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -292,8 +293,8 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
             'currency': 'KRW',
             'language': 'KO',
             'condition': {
-                'bookingItemCode': "2007271004-F01",
-                // bookingItemCode: this.hotelBookingInfo.summary.bookingItemCode,
+                // 'bookingItemCode': "2007271004-F01",
+                bookingItemCode: this.flightDetail.summary.bookingItemCode,
                 userNo: Number(this.booker.userNo),
 
             }
@@ -301,7 +302,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
         const initialState: any = {
             rq: rqInfo
         };
-        this.bsModalRef = this.bsModalService.show(MyModalFlightBookerEditComponent, { initialState, ...this.configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalFlightBookerEditComponent, { initialState, ...ConfigInfo });
     }
 
     // 여권정보 등록/수정
@@ -313,12 +314,8 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
             ],
             title: 'Modal with component'
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: true
-        };
         console.info('[initialState]', initialState);
-        this.bsModalRef = this.bsModalService.show(MyModalFlightPassportComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalFlightPassportComponent, { initialState, ...ConfigInfo });
     }
 
     // 증빙서류 등록/수정
@@ -329,11 +326,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
             ],
             title: 'Modal with component'
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: true
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalFlightDocumentComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalFlightDocumentComponent, { initialState, ...ConfigInfo });
     }
 
     // E-Ticket 모달
@@ -354,7 +347,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
             rq: rqInfo
         };
 
-        this.bsModalService.show(MyModalFlightEticketComponent, { initialState, ...this.configInfo });
+        this.bsModalService.show(MyModalFlightEticketComponent, { initialState, ...ConfigInfo });
     }
 
 
@@ -383,7 +376,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
                 }
             }
         };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...this.configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
         // this.flightResvCancel(rqInfo);
         // const path = '/my-reservation-flight-detail/' + qs.stringify(rqInfo);
         // this.router.navigate([path], {relativeTo : this.route});
@@ -398,11 +391,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalFlightSeatmapComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalFlightSeatmapComponent, { initialState, ...ConfigInfo });
     // }
 
     // // 항공 추가수하물 모달
@@ -413,11 +402,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalFlightBagDropComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalFlightBagDropComponent, { initialState, ...ConfigInfo });
     // }
 
     // 항공 마일리지 적립 모달
@@ -428,11 +413,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
             ],
             title: 'Modal with component'
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: true
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalFlightMileageAccumComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalFlightMileageAccumComponent, { initialState, ...ConfigInfo });
     }
 
     // // 항공 요금규정 모달
@@ -443,11 +424,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalFlightFareRuleComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalFlightFareRuleComponent, { initialState, ...ConfigInfo });
     // }
 
     // // 항공 Wifi & USIM 모달
@@ -458,11 +435,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalFlightWifiComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalFlightWifiComponent, { initialState, ...ConfigInfo });
     // }
 
     // // 항공 여행자보험 모달
@@ -473,11 +446,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalFlightTravelInsuComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalFlightTravelInsuComponent, { initialState, ...ConfigInfo });
     // }
 
     // // 항공 기내식신청 모달
@@ -488,11 +457,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalFlightMealComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalFlightMealComponent, { initialState, ...ConfigInfo });
     // }
 
     // // 요금 규정 모달
@@ -503,11 +468,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalFlightFareRuleComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalFlightFareRuleComponent, { initialState, ...ConfigInfo });
     // }
 
     // 탑승자 정보보기 모달
@@ -519,11 +480,7 @@ export class MyReservationFlightDetailPageComponent extends BasePageComponent im
             ],
             title: 'Modal with component'
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: true
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalFlightPassingerComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalFlightPassingerComponent, { initialState, ...ConfigInfo });
     }
 
     openOneonon() {

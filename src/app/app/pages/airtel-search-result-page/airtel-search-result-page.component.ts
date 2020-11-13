@@ -1,10 +1,10 @@
 import { Component, Inject, PLATFORM_ID, OnInit, OnDestroy } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
+import { Subscription, Observable } from 'rxjs';
 import { pluck, take, tap } from 'rxjs/operators';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertAirtelResultMainSearch } from 'src/app/store/airtel-search-result-page/main-search/airtel-result-main-search.actions';
 
@@ -32,16 +32,6 @@ import { BasePageComponent } from '../base-page/base-page.component';
     templateUrl: './airtel-search-result-page.component.html',
 })
 export class AirtelSearchResultPageComponent extends BasePageComponent implements OnInit, OnDestroy {
-    queryParams$: Observable<any>;
-
-    vm$: Observable<any>;
-    serviceCode$: Observable<any>;
-    serviceName$: Observable<any>;
-    succeedYn$: Observable<any>;
-    transactionSetId$: Observable<any>;
-    searchResult$: Observable<any>;
-    hotelList$: Observable<any>;
-
     searchBool: boolean = false;
     vmModel: AirtelResultSearch;
 
@@ -67,16 +57,18 @@ export class AirtelSearchResultPageComponent extends BasePageComponent implement
     };
     private subscriptionList: Subscription[];
 
+    public hotelList$: Observable<any>;
+
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        titleService: Title,
-        metaTagService: Meta,
-        seoCanonicalService: SeoCanonicalService,
-        translate: TranslateService,
-        private store: Store<any>,
-        private _router: Router,
+        public titleService: Title,
+        public metaTagService: Meta,
+        public seoCanonicalService: SeoCanonicalService,
+        public translate: TranslateService,
         private route: ActivatedRoute,
-        private _api: AirtelSearchResultPageService
+        private _api: AirtelSearchResultPageService,
+        private store: Store<any>,
+        private router: Router
     ) {
         super(
             platformId,
@@ -104,7 +96,6 @@ export class AirtelSearchResultPageComponent extends BasePageComponent implement
             }
         });
 
-        this.observableInit();
         await this.dataInit();
     }
 
@@ -115,46 +106,20 @@ export class AirtelSearchResultPageComponent extends BasePageComponent implement
             }
         );
     }
-
     /**
-     * 옵저버블 초기화
-     */
-    observableInit() {
-        /**
-         * route 옵져버블 셋팅
-         */
-        this.queryParams$ = this.route.queryParams
-            .pipe(
-                take(1),
-                tap(ev => console.log('[queryParams$]', ev)),
-                pluck('search'),
-            );
-
-        /**
-         * vm 옵져버블 셋팅
-         * tap(ev => console.log('[main-search > vm$]', ev))
-         */
-        this.vm$ = this.store
-            .pipe(select(resultMainSearchSelectors.selectComponentStateVm));
-
-        // search result
-        this.searchResult$ = this.vm$
-            .pipe(pluck('result'),);
-
-        // hotelList
-        this.hotelList$ = this.searchResult$
-            .pipe(pluck('hotels'),);
-    }
-
-    /**
-     * 데이터 초기화
-     */
+    * 데이터 초기화
+    */
     async dataInit() {
         /**
          * 파라메터 상태에 따라 api 호출 여부 결정
          */
         this.subscriptionList.push(
-            this.queryParams$
+            this.route.queryParams
+                .pipe(
+                    take(1),
+                    tap(ev => console.log('[queryParams$]', ev)),
+                    pluck('search'),
+                )
                 .subscribe(
                     (ev: any) => (ev) ? this.searchBool = true : this.searchBool = false
                 )
@@ -185,8 +150,8 @@ export class AirtelSearchResultPageComponent extends BasePageComponent implement
      */
     initDataLoad($bool: boolean = true): void {
         this.subscriptionList.push(
-            this.vm$
-                .pipe(take(1))
+            this.store
+                .select(resultMainSearchSelectors.selectComponentStateVm)
                 .subscribe(
                     (ev) => {
                         this.initData = ($bool) ? _.cloneDeep(ev) : ev;
@@ -207,7 +172,7 @@ export class AirtelSearchResultPageComponent extends BasePageComponent implement
 
     onHotelDtl(hotelItem) {
         console.log('move hotel detail...');
-        this._router.navigate(['/airtel-search-roomtype'], { queryParams: { hotelCode: hotelItem.hotelCode } });
+        this.router.navigate(['/airtel-search-roomtype'], { queryParams: { hotelCode: hotelItem.hotelCode } });
     }
 
     getHotelRating(hotelGradeCode) {

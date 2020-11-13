@@ -1,14 +1,22 @@
 import { Component, Inject, Input, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
-import { HeaderTypes } from '../../enums/header-types.enum';
-import { Observable, Subscription } from 'rxjs';
-import { select, Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
-import { isPlatformBrowser, isPlatformServer, Location } from '@angular/common';
+import { Location } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
-import * as commonLayoutSelectors from '../../../store/common/common-layout/common-layout.selectors';
-import * as _ from 'lodash';
+
+import { Store } from '@ngrx/store';
+
 import { upsertCommonLayout } from '../../../store/common/common-layout/common-layout.actions';
+
+import * as commonLayoutSelectors from '../../../store/common/common-layout/common-layout.selectors';
+
+import { TranslateService } from '@ngx-translate/core';
+
+import * as _ from 'lodash';
+
 import { CommonLayoutSideMenuService } from '../../services/common-layout-side-menu/common-layout-side-menu.service';
+
+import { HeaderTypes } from '../../enums/header-types.enum';
+
 import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 
 @Component({
@@ -28,7 +36,6 @@ export class MypageHeaderComponent extends BaseChildComponent implements OnInit,
         sideMenuBool: false
     };
 
-    vm$: Observable<any>;
     vmSubscription: Subscription;
 
     rxAlive: boolean = true;
@@ -37,10 +44,10 @@ export class MypageHeaderComponent extends BaseChildComponent implements OnInit,
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
+        public commonLayoutSideMenuService: CommonLayoutSideMenuService,
         private store: Store<any>,
         private translateService: TranslateService,
         private location: Location,
-        public commonLayoutSideMenuService: CommonLayoutSideMenuService
     ) {
         super(platformId);
         this.subscriptionList = [];
@@ -49,7 +56,6 @@ export class MypageHeaderComponent extends BaseChildComponent implements OnInit,
     ngOnInit(): void {
         super.ngOnInit();
         this.headerTitleInit();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -80,19 +86,12 @@ export class MypageHeaderComponent extends BaseChildComponent implements OnInit,
     }
 
     /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.vm$ = this.store
-            .pipe(select(commonLayoutSelectors.selectComponentStateVm));
-    }
-
-    /**
      * 서브스크라이브 초기화
      */
     subscribeInit() {
         this.subscriptionList.push(
-            this.vm$
+            this.store
+                .select(commonLayoutSelectors.selectComponentStateVm)
                 .subscribe(
                     (ev) => {
                         if (ev) {

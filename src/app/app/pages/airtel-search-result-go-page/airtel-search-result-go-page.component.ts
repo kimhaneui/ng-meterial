@@ -3,13 +3,13 @@ import { DatePipe } from '@angular/common';
 import { Title, Meta } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import { Store } from '@ngrx/store';
-import { LoadingBarService } from '@ngx-loading-bar/core';
 
 import { upsertAirtelSearchResult } from 'src/app/store/airtel-common/airtel-search-result/airtel-search-result.actions';
 
+import { LoadingBarService } from '@ngx-loading-bar/core';
 import { TranslateService } from '@ngx-translate/core';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 
@@ -28,6 +28,7 @@ import { FlightModalPriceAlarmComponent } from 'src/app/common-source/modal-comp
 import { FlightModalDetailFilterComponent } from 'src/app/common-source/modal-components/flight-modal-detail-filter/flight-modal-detail-filter.component';
 import { FlightModalAlignFilterComponent } from 'src/app/common-source/modal-components/flight-modal-align-filter/flight-modal-align-filter.component';
 import { AirtelModalResearchComponent } from 'src/app/common-source/modal-components/airtel-modal-research/airtel-modal-research.component';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 @Component({
     selector: 'app-airtel-search-result-go-page',
@@ -59,12 +60,6 @@ export class AirtelSearchResultGoPageComponent extends BasePageComponent impleme
     bsModalAlarmRef: BsModalRef;  // 가격알림 모달
 
     rxAlive: any = true;  // 구독 제어변수( true : subscribe, false : unsubscribe)
-
-    // 모달 파라미터(클래스 추가)
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
 
     // 무한스크롤 옵션
     infiniteScrollConfig: any = {
@@ -247,7 +242,7 @@ export class AirtelSearchResultGoPageComponent extends BasePageComponent impleme
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
         console.info('[3. API 호출 끝]');
     }
@@ -257,7 +252,10 @@ export class AirtelSearchResultGoPageComponent extends BasePageComponent impleme
    */
     async flightListIncrease() {
         // 리스트 총 갯수 < 리미트 시작 값
-        if (!this.resultList && (this.resultList.result.totalFlightCount < this.flightSearhRQ.condition.limits[0] + 10)) {
+        if (
+            (this.isBrowser && _.has(this.resultList.result, 'totalFlightCount')) &&
+            (this.resultList.result.totalFlightCount < this.flightSearhRQ.condition.limits[0] + 10)
+        ) {
             return false;
         }
 
@@ -375,7 +373,7 @@ export class AirtelSearchResultGoPageComponent extends BasePageComponent impleme
     onDetailFilter() {
         console.info('[ 필터 | 상세 ]');
 
-        this.bsModalFilterRef = this.bsModalService.show(FlightModalDetailFilterComponent, { ...this.configInfo });
+        this.bsModalFilterRef = this.bsModalService.show(FlightModalDetailFilterComponent, { ...ConfigInfo });
     }
 
     /**
@@ -384,7 +382,7 @@ export class AirtelSearchResultGoPageComponent extends BasePageComponent impleme
     onAlignFilter() {
         console.info('[ 필터 | 정렬 ]');
 
-        this.bsModalAlignRef = this.bsModalService.show(FlightModalAlignFilterComponent, { ...this.configInfo });
+        this.bsModalAlignRef = this.bsModalService.show(FlightModalAlignFilterComponent, { ...ConfigInfo });
     }
 
     /**
@@ -392,17 +390,14 @@ export class AirtelSearchResultGoPageComponent extends BasePageComponent impleme
      */
     onAlarm($ctx) {
 
-        $ctx.bsModalAlarmRef = $ctx.bsModalService.show(FlightModalPriceAlarmComponent, { ...this.configInfo });
+        $ctx.bsModalAlarmRef = $ctx.bsModalService.show(FlightModalPriceAlarmComponent, { ...ConfigInfo });
     }
 
     onChangeBtnClick($ctx) {
         console.info('[변경 버튼 클릭]');
-
-        $ctx.bsModalChangeRef = $ctx.bsModalService.show(AirtelModalResearchComponent, { ...this.configInfo });
-
+        $ctx.bsModalChangeRef = $ctx.bsModalService.show(AirtelModalResearchComponent, { ...ConfigInfo });
         this.subscriptionList.push(
             $ctx.bsModalService.onHide
-                .pipe(takeWhile(() => $ctx.rxAlive))
                 .subscribe(
                     () => {
                         const path = $ctx.bsModalChangeRef.content.naviPath;

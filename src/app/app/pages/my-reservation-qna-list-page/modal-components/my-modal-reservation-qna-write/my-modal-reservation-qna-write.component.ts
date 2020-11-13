@@ -1,18 +1,21 @@
 import { Component, OnInit, Inject, PLATFORM_ID, ElementRef } from '@angular/core';
-import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
-import { DOCUMENT, Location } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
-import { Router, ActivatedRoute } from '@angular/router';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { environment } from '@/environments/environment';
-import { JwtService } from 'src/app/common-source/services/jwt/jwt.service';
 
+import { TranslateService } from '@ngx-translate/core';
+import { BsModalRef } from 'ngx-bootstrap/modal';
+
+import { environment } from '@/environments/environment';
+
+import { JwtService } from 'src/app/common-source/services/jwt/jwt.service';
 import { ApiMypageService } from 'src/app/api/mypage/api-mypage.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
+
 import { Subscription } from 'rxjs';
 import * as _ from 'lodash';
+
+import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
+
+import { ConsultingTypeCode, TypeCodeList } from '@app/common-source/models/my-qna/consulting-type-code.model'
 
 @Component({
     selector: 'app-my-modal-reservation-qna-write',
@@ -21,22 +24,21 @@ import * as _ from 'lodash';
 })
 export class MyModalReservationQnaWriteComponent extends BaseChildComponent implements OnInit {
     private subscriptionList: Subscription[];
+    public consultingTypeCode: ConsultingTypeCode[];
     private dataModel: any;
     public viewModel: any;
     element: any;
     $element: any;
     mainForm: FormGroup; // 생성된 폼 저장
     bookingItemCode: any;
+    type: any;
     typeCode: any;
+    convertedList: any[];
+
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        @Inject(DOCUMENT) private document: Document,
-        private store: Store<any>,
         public translateService: TranslateService,
         private fb: FormBuilder,
-        private router: Router,
-        private route: ActivatedRoute,
-        private location: Location,
         private el: ElementRef,
         public bsModalRef: BsModalRef,
         public jwtService: JwtService,
@@ -46,6 +48,7 @@ export class MyModalReservationQnaWriteComponent extends BaseChildComponent impl
         super(platformId);
         this.element = this.el.nativeElement;
         this.initialize();
+        this.mainFormCreate();
     }
 
     ngOnInit(): void {
@@ -67,21 +70,15 @@ export class MyModalReservationQnaWriteComponent extends BaseChildComponent impl
     private async initialize() {
         this.dataModel = {};
         this.viewModel = {};
-        this.typeCode = {
-            IC01: [
-                '예약문의', '결제문의', '변경문의', '취소문의', '기타'
-            ],
-            IC02: [
-                '예약문의', '결제문의', '취소문의', '기타'
-            ],
-            IC03: [
-                '예약문의', '결제문의', '취소문의', '기타'
-            ],
-            IC04: [
-                '예약문의', '결제문의', '배송문의', '취소문의', '기타'
-            ]
-        };
-        console.log(this.typeCode, 'typeCode');
+        this.subscriptionList = [];
+        this.consultingTypeCode = TypeCodeList;
+
+        this.convertedList = [];
+        this.consultingTypeCode.forEach((item) => {
+            this.convertedList[item.code] = this.convertedList[item.code] || [];
+            this.convertedList[item.code].push(item);
+        });
+
 
     }
 
@@ -100,8 +97,8 @@ export class MyModalReservationQnaWriteComponent extends BaseChildComponent impl
             currency: 'KRW',
             language: 'KO',
             condition: {
-                consultingCategoryCode: this.mainForm.get('postCategoryCode').value,
-                consultingTypeCode: 'CS001',
+                consultingCategoryCode: this.type,
+                consultingTypeCode: this.mainForm.get('consultingTypeCode').value,
                 userNo: userInfoRes.result.user.userNo,
                 smsReceiveYn: true,
                 questionTitle: 'title',
@@ -109,7 +106,7 @@ export class MyModalReservationQnaWriteComponent extends BaseChildComponent impl
                 bookingItemCode: this.bookingItemCode,
             },
         };
-
+        console.log(rqInfo, 'rqInfo');
         this.subscriptionList.push(
             this.apiMypageService.PUT_CONSULTING(rqInfo)
                 .subscribe(

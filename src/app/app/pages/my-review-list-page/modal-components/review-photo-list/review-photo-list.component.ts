@@ -1,5 +1,9 @@
 import { Component, OnInit } from '@angular/core';
+
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { ReviewPhotoDetailComponent } from '../review-photo-detail/review-photo-detail.component';
 
 @Component({
@@ -20,15 +24,7 @@ export class ReviewPhotoListComponent implements OnInit {
         this.bsModalRef.hide();
     }
     photoDetailClick() {
-
-        const initialState = {
-
-        };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(ReviewPhotoDetailComponent, { initialState, ...configInfo });
+        const initialState = {};
+        this.bsModalService.show(ReviewPhotoDetailComponent, { initialState, ...ConfigInfo });
     }
 }

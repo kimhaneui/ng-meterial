@@ -25,6 +25,7 @@ import { MyModalRentConfirmationComponent } from './modal-components/my-modal-re
 import { MyModalRentInvoiceComponent } from './modal-components/my-modal-rent-invoice/my-modal-rent-invoice.component';
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
 import { MyModalFlightBookerEditComponent } from '../my-reservation-flight-detail-page/modal-components/my-modal-flight-booker-edit/my-modal-flight-booker-edit.component';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 @Component({
     selector: 'app-my-reservation-rent-detail-page',
@@ -50,10 +51,6 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
     dateDiff: any;
     resolveData: any;
     bookingInfo: any;
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
 
     private subscriptionList: Subscription[];
 
@@ -113,7 +110,7 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -177,7 +174,7 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
 
                     }
                 )
@@ -218,14 +215,7 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
             ],
             title: 'Modal with component',
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: true,
-        };
-        this.bsModalRef = this.bsModalService.show(
-            MyModalFlightBookerEditComponent,
-            { initialState, ...configInfo }
-        );
+        this.bsModalRef = this.bsModalService.show(MyModalFlightBookerEditComponent, { initialState, ...ConfigInfo });
     }
 
     // // 여행자보험 모달
@@ -236,11 +226,7 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalRentTravelInsuComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalRentTravelInsuComponent, { initialState, ...ConfigInfo });
     // }
 
     onGoToRentMain() {
@@ -282,15 +268,7 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
                 },
             },
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false,
-        };
-        this.bsModalService.show(CommonModalAlertComponent, {
-            initialState,
-            ...configInfo,
-        });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo, });
     }
 
     rentBookedCancel() {
@@ -319,7 +297,7 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -346,7 +324,7 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
 
         this.bsModalRef = this.bsModalService.show(
             MyModalRentConfirmationComponent,
-            { initialState, ...this.configInfo }
+            { initialState, ...ConfigInfo }
         );
     }
 
@@ -369,10 +347,7 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
             rq: rqInfo
         };
 
-        this.bsModalRef = this.bsModalService.show(
-            MyModalRentInvoiceComponent,
-            { initialState, ...this.configInfo }
-        );
+        this.bsModalRef = this.bsModalService.show(MyModalRentInvoiceComponent, { initialState, ...ConfigInfo });
     }
 
     // // 렌터카 wifi & usim 모달
@@ -383,11 +358,7 @@ export class MyReservationRentDetailPageComponent extends BasePageComponent
     //         ],
     //         title: 'Modal with component'
     //     };
-    //     const configInfo = {
-    //         class: 'm-ngx-bootstrap-modal',
-    //         animated: true
-    //     };
-    //     this.bsModalRef = this.bsModalService.show(MyModalRentWifiComponent, { initialState, ...configInfo });
+    //     this.bsModalRef = this.bsModalService.show(MyModalRentWifiComponent, { initialState, ...ConfigInfo });
     // }
 
     // openAddReserv() {

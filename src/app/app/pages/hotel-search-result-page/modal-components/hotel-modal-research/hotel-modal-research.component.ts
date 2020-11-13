@@ -1,21 +1,21 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertHotelMainSearch } from '../../../../store/hotel-main-page/hotel-main-search/hotel-main-search.actions';
+import { clearHotelModalDestinations } from '../../../../store/hotel-common/hotel-modal-destination/hotel-modal-destination.actions';
+import { clearHotelModalCalendars } from '../../../../store/hotel-common/hotel-modal-calendar/hotel-modal-calendar.actions';
+import { clearHotelModalTravelerOptions } from '../../../../store/hotel-common/hotel-modal-traveler-option/hotel-modal-traveler-option.actions';
+import { clearHotelModalDetailOptions } from '../../../../store/hotel-common/hotel-modal-detail-option/hotel-modal-detail-option.actions';
+
 import * as hotelModalDestinationSelectors from '../../../../store/hotel-common/hotel-modal-destination/hotel-modal-destination.selectors';
 import * as hotelModalCalendarSelectors from '../../../../store/hotel-common/hotel-modal-calendar/hotel-modal-calendar.selectors';
 import * as hotelModalTravelerOptionSelectors from '../../../../store/hotel-common/hotel-modal-traveler-option/hotel-modal-traveler-option.selectors';
 import * as hotelModalDetailOptionSelectors from '../../../../store/hotel-common/hotel-modal-detail-option/hotel-modal-detail-option.selectors';
 import * as hotelSearchResultPageSelectors from '../../../../store/hotel-search-result-page/hotel-search-result/hotel-search-result.selectors';
-import { clearHotelModalDestinations } from '../../../../store/hotel-common/hotel-modal-destination/hotel-modal-destination.actions';
-import { clearHotelModalCalendars } from '../../../../store/hotel-common/hotel-modal-calendar/hotel-modal-calendar.actions';
-import { clearHotelModalTravelerOptions } from '../../../../store/hotel-common/hotel-modal-traveler-option/hotel-modal-traveler-option.actions';
-import { clearHotelModalDetailOptions } from '../../../../store/hotel-common/hotel-modal-detail-option/hotel-modal-detail-option.actions';
 
 import { TranslateService } from '@ngx-translate/core';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
@@ -25,14 +25,21 @@ import * as _ from 'lodash';
 import * as moment from 'moment';
 
 import { HotelComService } from '@/app/common-source/services/hotel-com-service/hotel-com-service.service';
+import { MajorDestinationService } from '@/app/common-source/services/major-destination/major-destination.service';
 
+import { environment } from '@/environments/environment';
+
+import { majorDestinationRq } from '@/app/common-source/models/common/major-destination.model';
+import { RequestParam } from '@/app/common-source/models/common/condition.model';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { HotelCommon } from '@/app/common-source/enums/hotel/hotel-common.enum';
 import { StoreCategoryTypes } from '../../../../common-source/enums/store-category-types.enum';
 
 import { ModalDestinationComponent } from '@/app/common-source/modal-components/modal-destination/modal-destination.component';
 import { HotelModalDetailOptionComponent } from '@/app/common-source/modal-components/hotel-modal-detail-option/hotel-modal-detail-option.component';
 import { CommonModalCalendarComponent } from '@/app/common-source/modal-components/common-modal-calendar/common-modal-calendar.component';
 import { BaseChildComponent } from '../../../base-page/components/base-child/base-child.component';
-import { environment } from '@/environments/environment';
 
 
 @Component({
@@ -58,15 +65,8 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
     };
 
     rxAlive: boolean = true;
-    modalhotelCity$: Observable<any>; //도시 or 공항 검색
-    modalHotelCalendar$: Observable<any>; //여행날짜
-    modalHotelTravelerOption$: Observable<any>; //인원 선택
-    modalHotelDetailOption$: Observable<any>;   //상세 옵션
-
-    hotelListRq$: Observable<any>; // 호텔 검색 request
 
     loadingBool: boolean = false;
-
 
     bsModalDestinatioRef: any;
     bsModalCalendarRef: any;
@@ -74,21 +74,23 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
     bsModalDetailOptionRef: any;
 
     private subscriptionList: Subscription[];
+    private majorRq: RequestParam;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        private store: Store<any>,
         public translateService: TranslateService,
+        private store: Store<any>,
         private fb: FormBuilder,
-        private route: ActivatedRoute,
         private router: Router,
         private bsModalService: BsModalService,
         private comHotelS: HotelComService,
-        public bsModalRef: BsModalRef,
+        private bsModalRef: BsModalRef,
+        private majorDestinationS: MajorDestinationService
     ) {
         super(platformId);
 
         this.subscriptionList = [];
+        this.getMajorDestination();
     }
 
     ngOnInit(): void {
@@ -100,7 +102,6 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
         this.storeHotelCommonInit(); // store > hotel-common 초기화
         this.vmInit(); // vm 초기화
         this.mainFormInit(); // 폼 초기화
-        this.observableInit(); // 옵져버블 초기화
         this.subscribeInit(); // 서브스크라이브 초기화
     }
 
@@ -113,6 +114,12 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
             }
         );
         console.info('[ngOnDestroy > rxAlive]', this.rxAlive);
+    }
+
+    private getMajorDestination() {
+        this.majorRq = majorDestinationRq;
+        this.majorRq.condition.itemCategoryCode = HotelCommon.IITEM_CATEGORY_CODE;
+        this.majorDestinationS.checkDestination() && this.majorDestinationS.getMajorDestination(this.majorRq);
     }
 
     /**
@@ -196,32 +203,15 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
     }
 
     /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.modalhotelCity$ = this.store
-            .pipe(select(hotelModalDestinationSelectors.getSelectId(['hotelCity'])));
-        this.modalHotelCalendar$ = this.store
-            .pipe(select(hotelModalCalendarSelectors.getSelectId(['hotelCalendar'])));
-        this.modalHotelTravelerOption$ = this.store
-            .pipe(select(hotelModalTravelerOptionSelectors.getSelectId(['hotelTravelerOption'])));
-        this.modalHotelDetailOption$ = this.store
-            .pipe(select(hotelModalDetailOptionSelectors.getSelectId(['hotelDetailOpt'])));
-        this.hotelListRq$ = this.store
-            .pipe(select(hotelSearchResultPageSelectors.getSelectId('hotel-list-rq-info')));
-    }
-
-    /**
      * 서브스크라이브 초기화
      */
     subscribeInit() {
-
         /**
          * 도시 검색
          */
         this.subscriptionList.push(
-            this.modalhotelCity$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelModalDestinationSelectors.getSelectId(['hotelCity']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalhotelCity$ > subscribe]', ev);
@@ -241,10 +231,10 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
          * 여행 날짜
          */
         this.subscriptionList.push(
-            this.modalHotelCalendar$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelModalCalendarSelectors.getSelectId(['hotelCalendar']))
                 .subscribe(
-                    (ev) => {
+                    (ev: any) => {
                         console.info('[modalHotelCalendar$ > subscribe]', ev);
                         if (ev) {
                             this.vm.checkDate.in = moment(ev.result.selectList[0].toString()).format('YYYY-MM-DD');
@@ -266,8 +256,8 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
          * 객실 수, 인원 수
          */
         this.subscriptionList.push(
-            this.modalHotelTravelerOption$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelModalTravelerOptionSelectors.getSelectId(['hotelTravelerOption']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalHotelTravelerOption$ > subscribe]', ev);
@@ -290,8 +280,8 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
          * 상세 검색
          */
         this.subscriptionList.push(
-            this.modalHotelDetailOption$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelModalDetailOptionSelectors.getSelectId(['hotelDetailOpt']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalHotelDetailOption$ > subscribe]', ev);
@@ -316,8 +306,8 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
          * 호텔 검색 RQ
          */
         this.subscriptionList.push(
-            this.hotelListRq$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelSearchResultPageSelectors.getSelectId('hotel-list-rq-info'))
                 .subscribe(
                     (ev: any) => {
                         console.info('[hotelListRq$ > subscribe]', ev);
@@ -410,9 +400,6 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
 
         const qsStr = qs.stringify(rqInfo);
         const path = '/hotel-search-result/' + qsStr;
-        const extras = {
-            relativeTo: this.route
-        };
         // 페이지 이동후 생명주기 재실행
         this.router.navigateByUrl('/', { skipLocationChange: true })
             .then(() => this.router.navigate([path]));
@@ -447,17 +434,6 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
         // 모달 전달 데이터
         const initialState = {
             storeId: storeId,
-            majorDestinationRq: {
-                rq: {
-                    currency: 'KRW',
-                    language: 'KO',
-                    stationTypeCode: environment.STATION_CODE,
-                    condition: {
-                        itemCategoryCode: itemCategoryCode,
-                        compCode: environment.COMP_CODE
-                    }
-                }
-            },
             destinationRq: {
                 rq: {
                     currency: 'KRW',
@@ -472,15 +448,9 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
 
-        this.bsModalDestinatioRef = this.bsModalService.show(ModalDestinationComponent, { initialState, ...configInfo });
+        this.bsModalDestinatioRef = this.bsModalService.show(ModalDestinationComponent, { initialState, ...ConfigInfo });
     }
 
     modalClose() {
@@ -519,14 +489,8 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
             isResearch: true
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
-        this.bsModalDetailOptionRef = this.bsModalService.show(HotelModalDetailOptionComponent, { initialState, ...configInfo });
+        this.bsModalDetailOptionRef = this.bsModalService.show(HotelModalDetailOptionComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -536,7 +500,8 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
         console.info('[여행날짜]');
         this.openCalendar();
     }
-    onCloseClick(e) {
+    onCloseClick(event: MouseEvent) {
+        event && event.preventDefault();
         console.info('모달 닫기');
         this.modalClose();
     }
@@ -591,12 +556,6 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
 
 
@@ -622,7 +581,7 @@ export class HotelModalResearchComponent extends BaseChildComponent implements O
         //             }
         //         )
         // );
-        this.bsModalCalendarRef = this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...configInfo });
+        this.bsModalCalendarRef = this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...ConfigInfo });
 
     }
 

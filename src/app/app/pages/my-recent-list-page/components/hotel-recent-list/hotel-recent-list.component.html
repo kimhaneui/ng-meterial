@@ -1,21 +1,24 @@
-<ng-container *ngIf="viewModel.recentList > 0">
-    <div *ngFor="let item of viewModel.recentList; index as index;" class="round-box recent-product-item">
-        <div class="product-summary">
-            <h2 class="product-title">{{item.hotelName}}</h2>
-            <ul (click)="onSearchResult($event, item.index)">
-                <li>
-                    <span>이용일</span>
-                    <span>{{item.dateRange}}</span>
-                </li>
-                <li>
-                    <span>성인 & 객실</span>
-                    <span>{{item.roomList}}</span>
-                </li>
-            </ul>
+<div class="page-contents-type3">
+    <ng-container *ngIf="viewModel.recentList !== 0">
+        <div *ngFor="let item of viewModel.recentList; index as index;" class="round-box recent-product-item">
+            <div class="product-summary">
+                <h2 class="product-title">{{item.hotelName}}</h2>
+                <ul (click)="onSearchResult($event, item.index)">
+                    <li>
+                        <span>이용일</span>
+                        <span>{{item.dateRange}}</span>
+                    </li>
+                    <li>
+                        <span>성인 & 객실</span>
+                        <span>{{item.roomList}}</span>
+                    </li>
+                </ul>
+            </div>
+            <a class="icon xs close2" (click)="onDeleteItem($event, index, item.index)">삭제</a>
         </div>
-        <a class="icon xs close2" (click)="onDeleteItem($event, index, item.index)">삭제</a>
-    </div>
-</ng-container>
+    </ng-container>
+</div>
+
 
 <div *ngIf="viewModel.recentList.length === 0" class="page-contents-type3">
     <!-- 검색 결과 없을때 -->

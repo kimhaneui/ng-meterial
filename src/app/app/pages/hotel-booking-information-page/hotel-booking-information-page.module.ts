@@ -1,6 +1,6 @@
 
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -17,6 +17,7 @@ import { HotelBookingInformationPageRoutingModule } from './hotel-booking-inform
 import { HotelModalAgreementComponent } from './modal-components/hotel-modal-agreement/hotel-modal-agreement.component';
 
 @NgModule({
+    providers: [DecimalPipe],
     declarations: [
         HotelBookingInformationPageComponent,
         HotelModalAgreementComponent

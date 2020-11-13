@@ -1,7 +1,11 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
-import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
+
 import { TranslateService } from '@ngx-translate/core';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 import { MyModalSeatmapResultComponent } from '../my-modal-seatmap-result/my-modal-seatmap-result.component';
 
 @Component({
@@ -49,13 +53,7 @@ export class MyModalSeatmapComponent extends BaseChildComponent implements OnIni
         const initialState = {
             storeId: storeId
         };
-
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(MyModalSeatmapResultComponent, { initialState, ...configInfo });
+        this.bsModalService.show(MyModalSeatmapResultComponent, { initialState, ...ConfigInfo });
 
     }
 

@@ -1,10 +1,10 @@
 import { Component, OnInit, Input, Inject, PLATFORM_ID, ViewEncapsulation, OnDestroy } from '@angular/core';
-import { isPlatformBrowser, isPlatformServer, Location } from '@angular/common';
+import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
-import { Store, select } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertCommonLayout } from '../../../store/common/common-layout/common-layout.actions';
 
@@ -41,16 +41,14 @@ export class AirtelHeaderComponent extends BaseChildComponent implements OnInit,
         sideMenuBool: false
     };
 
-    vm$: Observable<any>;
-
     private subscriptionList: Subscription[];
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
+        public commonLayoutSideMenuService: CommonLayoutSideMenuService,
         private store: Store<any>,
         private translateService: TranslateService,
         private location: Location,
-        public commonLayoutSideMenuService: CommonLayoutSideMenuService,
         private router: Router,
         private route: ActivatedRoute
     ) {
@@ -60,7 +58,6 @@ export class AirtelHeaderComponent extends BaseChildComponent implements OnInit,
 
     ngOnInit() {
         this.headerTitleInit();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -90,20 +87,12 @@ export class AirtelHeaderComponent extends BaseChildComponent implements OnInit,
     }
 
     /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.vm$ = this.store
-            .pipe(select(commonLayoutSelectors.selectComponentStateVm));
-    }
-
-    /**
      * 서브스크라이브 초기화
      */
     subscribeInit() {
         this.subscriptionList.push(
-            this.vm$
-                .pipe(takeWhile(() => this.alive))
+            this.store
+                .select(commonLayoutSelectors.selectComponentStateVm)
                 .subscribe(
                     (ev) => {
                         if (ev) {

@@ -84,7 +84,7 @@ export class MyEventListPageComponent extends BasePageComponent implements OnIni
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -109,7 +109,6 @@ export class MyEventListPageComponent extends BasePageComponent implements OnIni
         //         this.apiRentService.POST_RENT_LIST($resolveData.listFilterRq)
         //     ])
         //         .pipe(
-        //             takeWhile(val => this.rxAlive),
         //             catchError(([err1, err2]) => of([err1, err2]))
         //         )
         //         .subscribe(

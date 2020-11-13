@@ -479,7 +479,7 @@ export class CommonModalCalendarComponent implements OnInit, AfterViewChecked, O
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         ];

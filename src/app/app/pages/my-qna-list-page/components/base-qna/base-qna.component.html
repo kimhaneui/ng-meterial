@@ -1,0 +1,31 @@
+<ng-container *ngFor="let item of list; index as i ">
+    <div class="round-box reservation-question-item" (click)="detailView(i)">
+        <div class="reservation-title">
+            <span [ngClass]="'icon sm ' + settings[item.consultingCategoryCode]['reservation-title']['icon']"></span>
+
+            <span class=" text">{{item?.bookingItemCode}}</span>
+            <span class="label sm type1">문의접수</span>
+        </div>
+        <div class="question-summary">
+            <h2 class="product-title">{{item.questionTitle}}</h2>
+            <ul>
+                <li *ngIf="false">
+                    <span>출발일</span>
+                    <span>{{item.travelFromDate}}</span>
+                </li>
+                <li>
+                    <span>상담분류</span>
+                    <span>{{item.consultingTypeCode}}</span>
+                </li>
+                <li>
+                    <span>상담내용</span>
+                    <span>{{item.questionDetail}}</span>
+                </li>
+                <li>
+                    <span>접수일시</span>
+                    <span>{{item.requestDatetime}}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</ng-container>

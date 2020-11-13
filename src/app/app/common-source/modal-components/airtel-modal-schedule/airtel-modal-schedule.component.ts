@@ -1,7 +1,6 @@
 import { Component, OnInit, Input, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
 
 import { Store } from '@ngrx/store';
 
@@ -18,7 +17,10 @@ import { ApiAlertService } from '../../services/api-alert/api-alert.service';
 
 import { environment } from '@/environments/environment';
 
+import { ConfigInfo } from '../../models/common/modal.model';
+
 import { HeaderTypes } from '../../enums/header-types.enum';
+import { FlightStore } from '../../enums/flight/flight-store.enum';
 
 import { AirtelModalStepPageComponent } from '../airtel-modal-step-page/airtel-modal-step-page.component';
 import { AirtelModalPaymentComponent } from 'src/app/pages/airtel-search-result-come-page/modal-components/airtel-modal-payment/airtel-modal-payment.component';
@@ -60,11 +62,6 @@ export class AirtelModalScheduleComponent extends BaseChildComponent implements 
     bsModalPaymentRef: BsModalRef;
 
     rxAlive: any = true;
-
-    configInfo = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
 
     private subscriptionList: Subscription[];
 
@@ -198,13 +195,13 @@ export class AirtelModalScheduleComponent extends BaseChildComponent implements 
                     this.loadingBool = true;
 
                     console.info('[스토어에 flight-list-rs 저장]');
-                    this.modelInit('flight-list-rs', res);
+                    this.modelInit(FlightStore.STORE_FLIGHT_LIST_RS, res);
                 } else {
                     this.alertService.showApiAlert(res.errorMessage);
                 }
             })
             .catch((err: any) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -414,11 +411,10 @@ export class AirtelModalScheduleComponent extends BaseChildComponent implements 
             console.log('initialState promotionRq >>', initialState);
 
             // 결제 수단 선택모달
-            this.bsModalPaymentRef = this.bsModalService.show(AirtelModalPaymentComponent, { initialState, ...this.configInfo });
+            this.bsModalPaymentRef = this.bsModalService.show(AirtelModalPaymentComponent, { initialState, ...ConfigInfo });
             this.subscriptionList.push(
                 // 모달 닫힘
                 this.bsModalService.onHide
-                    .pipe(takeWhile(() => this.rxAlive))
                     .subscribe(
                         () => {
                             const isClose = this.bsModalPaymentRef.content.isClose; // 예약하기 클릭(true) 여부( 닫기버튼으로 닫을경우 false)
@@ -460,11 +456,10 @@ export class AirtelModalScheduleComponent extends BaseChildComponent implements 
                 step: 'flight-come'
             };
 
-            const bsModalAirtelModalStep = this.bsModalService.show(AirtelModalStepPageComponent, { initialState, ...this.configInfo });
+            const bsModalAirtelModalStep = this.bsModalService.show(AirtelModalStepPageComponent, { initialState, ...ConfigInfo });
 
             this.subscriptionList.push(
                 this.bsModalService.onHide
-                    .pipe(takeWhile(() => this.rxAlive))
                     .subscribe(
                         () => {
                             const isClose = bsModalAirtelModalStep.content.isClose;

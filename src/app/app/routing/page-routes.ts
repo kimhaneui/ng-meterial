@@ -8,12 +8,6 @@ import { MyComQsResolveService } from '../common-source/guard/resolve/my-com-qs-
  * 페이지 라우트
  */
 export const pageRoutes: Routes = [
-    //------------------------------------------[공통]
-    {
-        path: 'system-error',
-        loadChildren: () => import('../pages/cm-system-error/cm-system-error.module').then(mod => mod.CmSystemErrorModule)
-    },
-
     //------------------------------------------[통합메인]
     {
         path: '',
@@ -453,9 +447,19 @@ export const pageRoutes: Routes = [
         path: 'travel-convenience-main',
         loadChildren: () => import('../pages/travel-convenience-main-page/travel-convenience-main-page.module').then(mod => mod.TravelConvenienceMainPageModule)
     },
+
     // 더보기
     {
-        path: 'cm-service',
-        loadChildren: () => import('../pages/cm-service/cm-service.module').then(mod => mod.CmServiceModule)
+        path: 'system-error',
+        loadChildren: () => import('../pages/cm-system-error/cm-system-error.module').then(mod => mod.CmSystemErrorModule)
+    },
+    // 에러 위에 일반 페이지 정의
+    {
+        path: '404',
+        loadChildren: () => import('../pages/cm-system-error/cm-system-error.module').then(mod => mod.CmSystemErrorModule)
+    },
+    {
+        path: '**',
+        redirectTo: '/404'
     }
 ];

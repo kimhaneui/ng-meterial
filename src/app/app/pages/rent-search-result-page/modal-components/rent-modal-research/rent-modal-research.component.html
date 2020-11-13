@@ -94,9 +94,8 @@
                         <div class="select-box shadow no-arrow">
                             <span class="icon sm document"></span>
                             <select name="" id="" required="">
-                                <option value="" selected="" disabled="">차량 보험을 선택하세요.</option>
-                                <option value="">일반 자차보험</option>
-                                <option value="">고급 자차보험</option>
+                                <!-- <option value="" selected="" disabled="">차량 보험을 선택하세요.</option> -->
+                                <option [value]="vm.insurance" selected="">{{vm.insurance}}</option>
                             </select>
                         </div>
                     </div>

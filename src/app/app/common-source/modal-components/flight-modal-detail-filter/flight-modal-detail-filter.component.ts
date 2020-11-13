@@ -1,10 +1,9 @@
 import { Component, PLATFORM_ID, Inject, ElementRef, OnDestroy, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, FormArray, FormControl, AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { Store, select } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import * as flightSearchResultSelector from 'src/app/store/flight-common/flight-search-result/flight-search-result.selectors';
 
@@ -13,6 +12,8 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import * as _ from 'lodash';
 import * as moment from 'moment';
 import * as qs from 'qs';
+
+import { FlightStore } from '../../enums/flight/flight-store.enum';
 
 import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 
@@ -65,8 +66,6 @@ export class FlightModalDetailFilterComponent extends BaseChildComponent impleme
     amountMax: number;
 
     rxAlive: boolean = true;  // 스토어 구독 제어자
-    flightSearchListRQ$: Observable<any>; // 항공 리스트 RQ
-    flightSearchListRS$: Observable<any>; // 항공 리스트 RS
 
     loadingBool: boolean = false; // 완료 여부 (완료 : 화면 display)
 
@@ -94,7 +93,6 @@ export class FlightModalDetailFilterComponent extends BaseChildComponent impleme
         super.ngOnInit();
         const bodyEl = document.getElementsByTagName('body')[0];
         bodyEl.classList.add('overflow-none');
-        this.observableInit();  // 옵져버블 초기화
         this.subscribeInit();   // 구독
     }
 
@@ -131,24 +129,14 @@ export class FlightModalDetailFilterComponent extends BaseChildComponent impleme
     }
 
     /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.flightSearchListRQ$ = this.store
-            .pipe(select(flightSearchResultSelector.getSelectId('flight-list-rq-info')));
-        this.flightSearchListRS$ = this.store
-            .pipe(select(flightSearchResultSelector.getSelectId('flight-list-rs')));
-    }
-
-    /**
      * 구독
      */
     subscribeInit() {
         this.subscriptionList.push(
-            this.flightSearchListRQ$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(flightSearchResultSelector.getSelectId(FlightStore.STORE_FLIGHT_LIST_RQ))
                 .subscribe(
-                    (ev) => {
+                    (ev: any) => {
                         console.info('[flightListRq$ > subscribe]', ev);
                         if (ev) {
                             this.rqInfo = _.cloneDeep(ev);
@@ -162,10 +150,10 @@ export class FlightModalDetailFilterComponent extends BaseChildComponent impleme
         );
 
         this.subscriptionList.push(
-            this.flightSearchListRS$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(flightSearchResultSelector.getSelectId(FlightStore.STORE_FLIGHT_LIST_RS))
                 .subscribe(
-                    (ev) => {
+                    (ev: any) => {
                         console.info('[flightListRs$ > subscribe]', ev);
                         if (ev) {
                             // 필터 셋팅

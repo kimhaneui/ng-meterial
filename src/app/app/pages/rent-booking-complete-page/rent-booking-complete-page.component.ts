@@ -2,9 +2,9 @@ import { Component, ElementRef, Inject, OnInit, PLATFORM_ID, ViewEncapsulation, 
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import * as commonUserInfoSelectors from '../../store/common/common-user-info/common-user-info.selectors';
 
@@ -45,7 +45,6 @@ export class RentBookingCompletePageComponent extends BasePageComponent implemen
 
     userInfo: any;
     traveler: any;
-    commonUserInfo$: any;
 
     rentInfo: any;
     private subscriptionList: Subscription[];
@@ -101,16 +100,10 @@ export class RentBookingCompletePageComponent extends BasePageComponent implemen
         );
     }
 
-
-    observableInit() {
-        this.commonUserInfo$ = this.store
-            .pipe(select(commonUserInfoSelectors.getSelectId(['commonUserInfo'])));
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.commonUserInfo$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(commonUserInfoSelectors.getSelectId(['commonUserInfo']))
                 .subscribe(
                     (ev: any) => {
                         if (ev) {
@@ -152,7 +145,7 @@ export class RentBookingCompletePageComponent extends BasePageComponent implemen
      * 모든 bsModal 창 닫기
      */
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }

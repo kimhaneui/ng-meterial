@@ -1,13 +1,10 @@
 import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 import { Store } from '@ngrx/store';
 
 import { clearAirtelModalCalendars } from '@/app/store/airtel-common/airtel-modal-calendar/airtel-modal-calendar.actions';
-import { clearAirtelModalDestinations } from '@/app/store/airtel-common/airtel-modal-destination/airtel-modal-destination.actions';
-import { clearAirtelModalTravelerOptions } from '@/app/store/airtel-common/airtel-modal-traveler-option/airtel-modal-traveler-option.actions';
 
 import * as AirtelModalTravelerOptionSelector from '@/app/store/airtel-common/airtel-modal-traveler-option/airtel-modal-traveler-option.selectors';
 import * as AirtelModalDestinationSelector from '@/app/store/airtel-common/airtel-modal-destination/airtel-modal-destination.selectors';
@@ -21,6 +18,8 @@ import * as qs from 'qs';
 import * as moment from 'moment';
 
 import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '../../models/common/modal.model';
 
 import { StoreCategoryTypes } from '../../enums/store-category-types.enum';
 
@@ -40,12 +39,6 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
     mainForm: FormGroup;                    // 폼
 
     rxAlive: boolean = true;                // 구독 제어변수
-
-    modalTravelerOption$: Observable<any>;  // 좌석등급, 인원 수
-    modalOrigin$: Observable<any>;          // 목적지(출발)
-    modalDestination$: Observable<any>;     // 목적지(도착)
-    modalCalendar$: Observable<any>;        // 여행날짜
-    searchMain$: Observable<any>;           // 묶음할인 메인
 
     loadingBool: Boolean = false;
 
@@ -118,7 +111,7 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
         @Inject(PLATFORM_ID) public platformId: any,
         private store: Store<any>,
         private fb: FormBuilder,
-        public bsModalRef: BsModalRef,
+        private bsModalRef: BsModalRef,
         private bsModalService: BsModalService
     ) {
         super(platformId);
@@ -134,9 +127,7 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
 
         this.storeFlightCommonInit(); // store > flight-common 초기화
 
-        this.vmInit();
         this.formInit(); //폼 초기화
-        this.storeInit(); //스토어 초기화
         this.storeSubscribe(); //스토어 구독
     }
 
@@ -156,21 +147,11 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
     storeFlightCommonInit() {
         console.info('[0. store > airtel-common 초기화]');
         this.store.dispatch(clearAirtelModalCalendars());
-        this.store.dispatch(clearAirtelModalDestinations());
-        this.store.dispatch(clearAirtelModalTravelerOptions());
-    }
-
-    vmInit() {
-        this.vm.trip = _.cloneDeep(this.tripTypeCodes[0]);  // 항공 + 호텔
-        this.vm.checkDate = {};
         this.vm.hotelCity = {};
-        this.searchMain$ = this.store.select(
-            AirtelMainSearchSelector.getSelectId(['airtel-list-rq-info'])
-        );
 
         this.subscriptionList.push(
-            this.searchMain$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(AirtelMainSearchSelector.getSelectId(['airtel-list-rq-info']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[searchMain$ > subscribe]', ev);
@@ -206,32 +187,13 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
         this.loadingBool = true;
     }
 
-    storeInit() {
-        this.modalOrigin$ = this.store.select(
-            AirtelModalDestinationSelector.getSelectId(['airtel-origin'])
-        );
-
-        this.modalDestination$ = this.store.select(
-            AirtelModalDestinationSelector.getSelectId(['airtel-destination'])
-        );
-
-        this.modalCalendar$ = this.store.select(
-            AirtelModalCalendarSelector.getSelectId(['airtel-calendar'])
-        );
-
-        this.modalTravelerOption$ = this.store.select(
-            AirtelModalTravelerOptionSelector.getSelectId(['travelerOption'])
-        );
-
-    }
-
     storeSubscribe() {
         this.subscriptionList.push(
             // 여행 날짜
-            this.modalCalendar$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(AirtelModalCalendarSelector.getSelectId(['airtel-calendar']))
                 .subscribe(
-                    ev => {
+                    (ev: any) => {
                         console.info('[modalCalendar$ > subscribe]', ev);
                         if (ev) {
                             // 여행 날짜 -> vm 셋팅
@@ -245,10 +207,10 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
 
         this.subscriptionList.push(
             // 출발 목적지
-            this.modalOrigin$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(AirtelModalDestinationSelector.getSelectId(['airtel-origin']))
                 .subscribe(
-                    ev => {
+                    (ev: any) => {
                         console.info('[modalOrigin$ > subscribe]', ev);
                         if (ev) {
                             // 목적지 -> vm 셋팅
@@ -260,10 +222,10 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
 
         this.subscriptionList.push(
             // 도착 목적지
-            this.modalDestination$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(AirtelModalDestinationSelector.getSelectId(['airtel-destination']))
                 .subscribe(
-                    ev => {
+                    (ev: any) => {
                         console.info('[modalDestination$ > subscribe]', ev);
                         if (ev) {
                             this.destValSet(ev, 'dest');
@@ -274,10 +236,10 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
 
         this.subscriptionList.push(
             // 좌석 및 인원 옵션
-            this.modalTravelerOption$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(AirtelModalTravelerOptionSelector.getSelectId(['travelerOption']))
                 .subscribe(
-                    ev => {
+                    (ev: any) => {
                         console.info('[travelOption$ > subscribe]', ev);
                         if (ev) {
                             this.vm.travelerStore = ev.option;
@@ -322,17 +284,6 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
 
         const initialState: any = {
             storeId: $storeId,
-            majorDestinationRq: {
-                rq: {
-                    currency: 'KRW',
-                    language: 'KO',
-                    stationTypeCode: environment.STATION_CODE,
-                    condition: {
-                        itemCategoryCode: itemCategoryCode,
-                        compCode: environment.COMP_CODE
-                    }
-                }
-            },
             destinationRq: {
                 rq: {
                     currency: 'KRW',
@@ -347,14 +298,9 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
             }
         };
 
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
 
-        this.bsModalService.show(ModalDestinationComponent, { initialState, ...configInfo });
+        this.bsModalService.show(ModalDestinationComponent, { initialState, ...ConfigInfo });
     }
 
     goToHotelModalDestination($itemCategoryCode, $storeId) {
@@ -372,17 +318,6 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
         // 모달 전달 데이터
         const initialState = {
             storeId: storeId,
-            majorDestinationRq: {
-                rq: {
-                    currency: 'KRW',
-                    language: 'KO',
-                    stationTypeCode: environment.STATION_CODE,
-                    condition: {
-                        itemCategoryCode: itemCategoryCode,
-                        compCode: environment.COMP_CODE
-                    }
-                }
-            },
             destinationRq: {
                 rq: {
                     currency: 'KRW',
@@ -397,15 +332,9 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
 
-        this.bsModalService.show(ModalDestinationComponent, { initialState, ...configInfo });
+        this.bsModalService.show(ModalDestinationComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -543,12 +472,6 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
             encodeValuesOnly: true
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         //묶음할인(가는편)
         const queryString = qs.stringify(rqInfo, incodingOpt);
         let path = '/airtel-search-result-go/';
@@ -561,11 +484,10 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
             step: 'flight-go'
         };
 
-        const modalStepPage: BsModalRef = this.bsModalService.show(AirtelModalStepPageComponent, { initialState, ...configInfo });
+        const modalStepPage: BsModalRef = this.bsModalService.show(AirtelModalStepPageComponent, { initialState, ...ConfigInfo });
 
         this.subscriptionList.push(
             this.bsModalService.onHide
-                .pipe(takeWhile(() => this.rxAlive))
                 .subscribe(
                     () => {
                         const ctx = modalStepPage.content.ctx;
@@ -631,14 +553,10 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
                 initialState.selectList.push(val.date);
             }
         }
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
 
         console.info('[initialState]', initialState);
 
-        this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -669,15 +587,9 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
 
-        this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -692,12 +604,7 @@ export class AirtelModalResearchComponent extends BaseChildComponent implements 
             }
         };
 
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalService.show(AirtelModalTravelerOptionComponent, { initialState, ...configInfo });
+        this.bsModalService.show(AirtelModalTravelerOptionComponent, { initialState, ...ConfigInfo });
     }
 
     /**

@@ -1,10 +1,9 @@
 import { Component, Inject, PLATFORM_ID, ViewEncapsulation, ElementRef, OnInit, OnDestroy } from '@angular/core';
-import { Location } from '@angular/common';
+import { DecimalPipe, Location } from '@angular/common';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
 
 import { Store, select } from '@ngrx/store';
 
@@ -33,7 +32,8 @@ import { ApiBookingService } from '@/app/api/booking/api-booking.service';
 
 import { environment } from '@/environments/environment';
 
-import { CondisionSet, Condition } from '@/app/common-source/models/common/condition.model';
+import { RequestSet, RequestParam } from '@/app/common-source/models/common/condition.model';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 import { HotelStore } from '@/app/common-source/enums/hotel/hotel-store.enum';
@@ -83,7 +83,6 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
     selTravelerList: any = [];
     // adultList: any = [];
     // childList: any = [];
-    commonUserInfo$: any;
 
     arrivalTime: any;
 
@@ -110,7 +109,8 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
         private alertService: ApiAlertService,
         private apiBookingS: ApiBookingService,
         private location: Location,
-        private router: Router
+        private router: Router,
+        private decimalPipe: DecimalPipe
     ) {
         super(
             platformId,
@@ -151,7 +151,7 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
      * 모든 bsModal 창 닫기
      */
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -363,7 +363,6 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
                 this.apiHotelService.POST_HOTEL_ROOM_CONDITION(this.roomConditoinRq),
                 this.apiHotelService.POST_HOTEL_INFORMATION(this.hotelInfoRq),
             ])
-                .pipe(takeWhile(() => this.rxAlive))
                 .subscribe(
                     ([res1, res2]: any) => {
                         /**
@@ -970,14 +969,7 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
             })
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalService.show(HotelModalAgreementComponent, { initialState, ...configInfo });
-
+        this.bsModalService.show(HotelModalAgreementComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -1072,7 +1064,7 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
             id: HotelStore.STORE_HOTEL_BOOKING_RQ,
             result: _.cloneDeep(rq)
         });
-        const newRq: Condition = _.cloneDeep(rq);
+        const newRq: RequestParam = _.cloneDeep(rq);
         newRq.condition = _.omit(rq.condition, ['deviceTypeCode', 'domainAddress', 'booker', 'travelers']);
 
         this.subscriptionList.push(
@@ -1093,7 +1085,7 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     },
                     () => {
                         this.bookingLoading = false;
@@ -1187,7 +1179,7 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
 
         console.log(travelerList);
         // ---------[booking rq 셋팅]
-        const rq: Condition = CondisionSet;
+        const rq: RequestParam = _.cloneDeep(RequestSet);
         rq.transactionSetId = this.vm.roomConRq.transactionSetId;
         // condition 필수 : domainAddress / deviceTypeCode / booker / travelers
         rq.condition = {
@@ -1272,11 +1264,14 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
         console.info('[onSubmit]', $form);
         console.info('$form.valid : ', $form.valid);
         if ($form.valid) {
-            this.bookingLoading = true;
-            this.rxAlive = false;
             console.info('[1. 유효성 체크 성공]');
-            this.bookingLoading = true;
-            this.goBooking($form);
+            if (this.roomConditoinRs.amountChangedYn) {
+                this.amountChangedAlert();
+            } else {
+                this.bookingLoading = true;
+                this.rxAlive = false;
+                this.goBooking($form);
+            }
         } else {
             _.forEach($form.controls, ($val, $key) => {
                 if (!$val.valid) {
@@ -1326,7 +1321,15 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
                         );
                     }
 
-                    this.inValidAlert(targetId);
+                    const evtObj: any = {
+                        close: {
+                            fun: () => {
+                                this.comValidator.scrollToTarget(targetId);
+                            }
+                        }
+                    };
+
+                    this.modalConfirmEvt('입력 값이 올바르지 않은 항목이 있습니다.', null, evtObj);
 
                     return false;
                 }
@@ -1335,34 +1338,68 @@ export class HotelBookingInformationPageComponent extends BasePageComponent impl
         }
     } // end onSubmit
 
-    public inValidAlert(targetId) {
-        console.info('inValidAlert', targetId);
-        const initialState = {
-            titleTxt: '입력 값이 올바르지 않은 항목이 있습니다.',
-            closeObj: { fun: () => { } },
-        };
-
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
-        this.subscriptionList.push(
-            this.bsModalService.onHidden
-                .subscribe(
-                    () => {
-                        this.comValidator.scrollToTarget(targetId);
-                    }
-                )
-        );
-
-    }
-
     public isValidError(control: AbstractControl, submitted: boolean): boolean {
         const formControl = control as FormControl;
         return formControl.errors && (submitted || formControl.dirty || formControl.touched);
+    }
+
+    /**
+     *
+     * @param titleTxt
+     * @param alertHtml
+     * @param evtObj
+     */
+    private modalConfirmEvt(titleTxt: string, alertHtml: string, evtObj: any) {
+        const initialState: any = {
+            titleTxt: titleTxt
+        };
+
+        if (alertHtml)
+            initialState.alertHtml = alertHtml;
+
+        if (evtObj.ok) {
+            initialState.okObj = {
+                name: evtObj.ok.name,
+                fun: evtObj.ok.fun
+            };
+        }
+
+        if (evtObj.cancel) {
+            initialState.cancelObj = {
+                name: evtObj.cancel.name,
+                fun: evtObj.cancel.fun
+            };
+        }
+
+        if (evtObj.close)
+            initialState.closeObj = {
+                fun: () => { }
+            };
+
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
+        if (evtObj.close) {
+            this.subscriptionList.push(
+                this.bsModalService.onHidden
+                    .subscribe(
+                        () => {
+                            evtObj.close.fun();
+                        }
+                    )
+            );
+        }
+    }
+
+    private amountChangedAlert() {
+        let alertHtml: string = '선택하신 상품의 요금이 변경되었습니다.<br/>';
+        alertHtml += '요금을 다시 한번 확인해주세요.<br/>';
+        alertHtml += `{ <b>${this.decimalPipe.transform(this.roomType.amountSum)}</b> } → { <b>${this.decimalPipe.transform(this.roomConditoinRs.amountSum)}</b> }`;
+        const evtObj: any = {
+            ok: {
+                name: '확인',
+                fun: () => { }
+            }
+        };
+        this.modalConfirmEvt('요금 변경 알림', alertHtml, evtObj);
     }
 
 }

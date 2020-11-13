@@ -1,10 +1,9 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy, Input } from '@angular/core';
 import { Title, Meta } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertCommonUserInfo, deleteCommonUserInfo } from 'src/app/store/common/common-user-info/common-user-info.actions';
 
@@ -26,6 +25,8 @@ import { SeoCanonicalService } from 'src/app/common-source/services/seo-canonica
 
 import { environment } from '@/environments/environment';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { BasePageComponent } from 'src/app/pages/base-page/base-page.component';
 import { RentModalAgreementComponent } from 'src/app/pages/rent-booking-information-page/modal-components/rent-modal-agreement/rent-modal-agreement.component';
 
@@ -40,13 +41,11 @@ export class ModalMypageMainComponent extends BasePageComponent implements OnIni
     loadingBool: boolean = false;
     userInfo: any;
     traveler: any;
-    commonUserInfo$: any;
     isMyModalMain: boolean = true;
     rxAlive: boolean = true;
     bookingInfo: any;
     result: any;
 
-    isMyModalMain$: Observable<any>;
     storeId: string = 'my-menu-layout';
     private subscriptionList: Subscription[];
     summary: any;
@@ -82,7 +81,6 @@ export class ModalMypageMainComponent extends BasePageComponent implements OnIni
         console.info('[ModalMypageMainComponent > ngOnInit]');
         super.ngOnInit();
         this.checkedLogin();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -124,7 +122,7 @@ export class ModalMypageMainComponent extends BasePageComponent implements OnIni
                         }
                     })
                     .catch((err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     });
 
                 console.info('[travelerRes]', travelerRes);
@@ -163,18 +161,10 @@ export class ModalMypageMainComponent extends BasePageComponent implements OnIni
         this.store.dispatch(deleteCommonUserInfo($id));
     }
 
-    observableInit() {
-        console.log('왔썹');
-        this.isMyModalMain$ = this.store
-            .pipe(select(commonLayoutSelectors.getSelectId(this.storeId)));
-        this.commonUserInfo$ = this.store
-            .pipe(select(commonUserInfoSelectors.getSelectId(['commonUserInfo'])));
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.isMyModalMain$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(commonLayoutSelectors.getSelectId(this.storeId))
                 .subscribe(
                     (ev: any) => {
                         if (ev) {
@@ -186,8 +176,8 @@ export class ModalMypageMainComponent extends BasePageComponent implements OnIni
                 )
         );
         this.subscriptionList.push(
-            this.commonUserInfo$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(commonUserInfoSelectors.getSelectId(['commonUserInfo']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[ev]', ev);
@@ -204,7 +194,6 @@ export class ModalMypageMainComponent extends BasePageComponent implements OnIni
 
     aaa() {
         this.checkedLogin();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -337,12 +326,7 @@ export class ModalMypageMainComponent extends BasePageComponent implements OnIni
             storeId: storeId
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(RentModalAgreementComponent, { initialState, ...configInfo });
+        this.bsModalService.show(RentModalAgreementComponent, { initialState, ...ConfigInfo });
     }
 
     public onGoToLogin(): void {

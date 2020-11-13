@@ -2,10 +2,10 @@ import { Component, Inject, PLATFORM_ID, OnInit, OnDestroy } from '@angular/core
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
-import { Observable, Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
-import { Store, select } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertHotelSearchRoomtype } from '../../store/hotel-search-roomtype-page/hotel-search-roomtype/hotel-search-roomtype.actions';
 import { clearHotelModalCalendars } from 'src/app/store/hotel-common/hotel-modal-calendar/hotel-modal-calendar.actions';
@@ -38,6 +38,8 @@ import { JwtService } from '@/app/common-source/services/jwt/jwt.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
 
 import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 import { StoreCategoryTypes } from 'src/app/common-source/enums/store-category-types.enum';
@@ -120,10 +122,6 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
     roomLoadingBool: boolean = false;
     rxAlive: boolean = true;
 
-    hotelListRq$: Observable<any>;
-    modalHotelCalendar$: Observable<any>;
-    modalHotelTravelerOption$: Observable<any>; //인원 선택
-
     bsModalRef: BsModalRef;
     bsModalPhotoListRef: any;
     bsModalReviewRef: any;
@@ -187,7 +185,6 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
                 )
         );
 
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -206,7 +203,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
      * 모든 bsModal 창 닫기
      */
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -223,7 +220,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
                 .pipe(take(1))
                 .subscribe(
                     (status: any) => {
-                        if (status === 'END') {
+                        if (status === 'STOP') {
                             this.rxAlive = false;
                             console.info('[status]', status);
                             console.info('[rxAlive]', this.rxAlive);
@@ -236,16 +233,6 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
                 )
         );
     }
-    /**
-     * 옵저버블 초기화
-     */
-    observableInit() {
-        this.modalHotelTravelerOption$ = this.store
-            .pipe(select(hotelModalTravelerOptionSelectors.getSelectId(['hotelTravelerOption'])));
-
-        this.modalHotelCalendar$ = this.store
-            .pipe(select(hotelModalCalendarSelectors.getSelectId(['hotelCalendar'])));
-    }
 
     /**
      * 서브스크라이브 초기화
@@ -257,8 +244,8 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
          * 여행 날짜
          */
         this.subscriptionList.push(
-            this.modalHotelCalendar$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelModalCalendarSelectors.getSelectId(['hotelCalendar']))
                 .subscribe(
                     (ev: any) => {
                         console.info('[modalHotelCalendar$ > subscribe]', ev);
@@ -276,8 +263,8 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
          * 객실 수, 인원 수
          */
         this.subscriptionList.push(
-            this.modalHotelTravelerOption$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(hotelModalTravelerOptionSelectors.getSelectId(['hotelTravelerOption']))
                 .subscribe(
                     (ev: any) => {
                         if (ev) {
@@ -385,7 +372,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -523,8 +510,8 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
                     },
                     (err) => {
                         // 하림대리에게 물어보기
-                        // this.alertService.showApiAlert(err);
-                        console.info('[err]', err.error);
+                        // this.alertService.showApiAlert(err.error.message);
+                        console.info('[err]', err);
                         if (this.rxAlive) {
                             const error = err.error;
                             if (error.errorCode === 'error.hotel.roomList')
@@ -603,15 +590,8 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
      */
     onHotelReview(e: any) {
         e.preventDefault();
-
         console.log('여행 후기 modal open ...');
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalReviewRef = this.bsModalService.show(HotelModalReviewComponent, { ...configInfo });
+        this.bsModalReviewRef = this.bsModalService.show(HotelModalReviewComponent, { ...ConfigInfo });
     }
 
     /**
@@ -665,13 +645,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
     onMapView(e: any) {
         e.preventDefault();
         console.log('지도 보기 modal open ...');
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalLocationMapRef = this.bsModalService.show(HotelModalLocationMapComponent, { ...configInfo });
+        this.bsModalLocationMapRef = this.bsModalService.show(HotelModalLocationMapComponent, { ...ConfigInfo });
     }
 
     // 객실 수, 인원 수 선택
@@ -736,13 +710,6 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
                 }
             }
         };
-
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         console.info('[initialState]', initialState);
 
 
@@ -769,7 +736,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
         //         )
         // );
 
-        this.bsModalRef = this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(CommonModalCalendarComponent, { initialState, ...ConfigInfo });
 
     }
 
@@ -843,13 +810,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
         const initialState = {
             roomInfoRq: rq
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalRoomtypeDetailRef = this.bsModalService.show(HotelModalRoomtypeDetailComponent, { initialState, ...configInfo });
+        this.bsModalRoomtypeDetailRef = this.bsModalService.show(HotelModalRoomtypeDetailComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -974,13 +935,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false,
-            keyboard: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -1032,10 +987,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
     commonUserInfoInit() {
         this.subscriptionList.push(
             this.store
-                .pipe(
-                    select(commonUserInfoSelectors.getSelectId('commonUserInfo')), // 스토어 ID
-                    takeWhile(() => this.rxAlive)
-                )
+                .select(commonUserInfoSelectors.getSelectId('commonUserInfo')) // 스토어 ID
                 .subscribe(
                     (ev: any) => {
                         console.info('commonUserInfo > ', ev);
@@ -1102,7 +1054,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
                     },
                     (err) => {
                         // 하림대리에게 물어보기
-                        // this.alertService.showApiAlert(err);
+                        // this.alertService.showApiAlert(err.error.message);
                         console.info('[API 호출 | 호텔 장바구니 추가 > err]', err);
                         this.cartMsgAlert('장바구니 저장 에러', '장바구니로 이동하시겠습니까?', true);
                     }
@@ -1141,12 +1093,7 @@ export class HotelSearchRoomtypePageComponent extends BasePageComponent implemen
                 fun: () => { }
             };
         }
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     // 장바구니 리스트

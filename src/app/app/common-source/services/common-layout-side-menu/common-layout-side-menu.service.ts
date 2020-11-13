@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import * as commonLayoutSelectors from '../../../store/common/common-layout/common-layout.selectors';
 
@@ -12,7 +12,6 @@ import { upsertCommonLayout } from '../../../store/common/common-layout/common-l
 })
 export class CommonLayoutSideMenuService implements OnDestroy {
     isMyModalMain: boolean;
-    isMyModalMain$: Observable<any>;
     storeId: string = 'my-menu-layout';
     private subscriptionList: Subscription[];
 
@@ -20,7 +19,6 @@ export class CommonLayoutSideMenuService implements OnDestroy {
         private store: Store<any>
     ) {
         this.subscriptionList = [];
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -32,16 +30,11 @@ export class CommonLayoutSideMenuService implements OnDestroy {
         );
     }
 
-    observableInit() {
-        console.info('[CommonLayoutSideMenuService > observableInit]');
-        this.isMyModalMain$ = this.store
-            .pipe(select(commonLayoutSelectors.getSelectId([this.storeId])));
-    }
-
     subscribeInit() {
         console.info('[CommonLayoutSideMenuService > subscribeInit]');
         this.subscriptionList.push(
-            this.isMyModalMain$
+            this.store
+                .select(commonLayoutSelectors.getSelectId([this.storeId]))
                 .subscribe(
                     (ev: any) => {
                         console.info('[CommonLayoutSideMenuService > subscribeInit]', ev);

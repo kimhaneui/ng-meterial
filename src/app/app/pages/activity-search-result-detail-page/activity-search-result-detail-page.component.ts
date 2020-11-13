@@ -32,6 +32,8 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 
 import { environment } from '@/environments/environment';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { HeaderTypes } from '../../common-source/enums/header-types.enum';
 import { ActivityCommon } from '@/app/common-source/enums/activity/activity-common.enum';
 import { ActivityStore } from '@/app/common-source/enums/activity/activity-store.enum';
@@ -70,18 +72,18 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
+        public titleService: Title,
+        public metaTagService: Meta,
+        public seoCanonicalService: SeoCanonicalService,
+        public translate: TranslateService,
         @Inject(DOCUMENT) private document: Document,
-        titleService: Title,
-        metaTagService: Meta,
-        seoCanonicalService: SeoCanonicalService,
-        translate: TranslateService,
-        private readonly store: Store<any>,
-        private readonly route: ActivatedRoute,
-        private readonly router: Router,
-        private readonly activityComServiceService: ActivityComServiceService,
-        private readonly apiActivityService: ApiActivityService,
-        public jwtService: JwtService,
-        public utilUrlService: UtilUrlService,
+        private store: Store<any>,
+        private route: ActivatedRoute,
+        private router: Router,
+        private activityComServiceService: ActivityComServiceService,
+        private apiActivityService: ApiActivityService,
+        private jwtService: JwtService,
+        private utilUrlService: UtilUrlService,
         private bsModalService: BsModalService,
         private countdownTimerService: CountdownTimerService,
         private webShareS: WebShareService,
@@ -169,7 +171,7 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
                 .subscribe(
                     (status: any) => {
                         console.info('[status]', status);
-                        if (status === 'END') {
+                        if (status === 'STOP') {
                             this.rxAlive = false;
                             this.timerAlert();
                         }
@@ -226,7 +228,7 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
 
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
 
@@ -264,7 +266,9 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
                 { text: '사용방법', id: 'use', count: 0, active: false, show: false, more: true },
                 { text: '취소규정', id: 'cancel', count: 0, active: false, show: false, more: true },
                 { text: '이용후기', id: 'after', count: 0, active: false, show: false, more: true }
-            ]
+            ],
+            itineraries: [],
+            provider: this.dataModel.response.provider || undefined
         };
 
         if (!_.isEmpty(this.dataModel.response.photos)) {
@@ -301,8 +305,8 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
                             break;
 
                         case 'itineraryDetail':
-                            this.viewModel.tabMenuList[1].show = true;
-                            this.viewModel.tabMenuList[1].count++;
+                            this.viewModel.tabMenuList[0].show = true;
+                            this.viewModel.tabMenuList[0].count++;
                             this.viewModel.itineraryDetail = value;
                             break;
 
@@ -322,6 +326,23 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
                 }
             }
         );
+
+        if (this.dataModel.response.itineraries.length > 0) {
+            this.viewModel.tabMenuList[1].show = true;
+            this.viewModel.tabMenuList[1].active = false;
+            this.viewModel.tabMenuList[1].count++;
+            this.viewModel.itineraries = this.dataModel.response.itineraries.map(
+                (item: any, index: number) => {
+                    if (index === 0) {
+                        item.active = true;
+                    } else {
+                        item.active = false;
+                    }
+
+                    return item;
+                }
+            );
+        }
     }
 
     /**
@@ -377,12 +398,8 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -417,7 +434,7 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
      * 모든 bsModal 창 닫기
      */
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -429,20 +446,13 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
             storeId: 'activity-modal-review'
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalReviewRef = this.bsModalService.show(ActivityModalReviewComponent, { initialState, ...configInfo });
+        this.bsModalReviewRef = this.bsModalService.show(ActivityModalReviewComponent, { initialState, ...ConfigInfo });
     }
 
     /**
      * 문의하기 클릭 - 문의하기 모달팝업
      */
     async onGoQna() {
-
         const userInfoRes = await this.jwtService.getUserInfo();
 
         const rqInfo =
@@ -451,10 +461,9 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
             currency: 'KRW',
             language: 'KO',
             condition: {
-                boardMasterSeq: 1000020,
-                postCategoryCode: 'IC04',
                 userNo: userInfoRes.result.user.userNo,
-                postTitle: this.dataModel.response.activityNameEn
+                limits: [0, 10],
+                activityMasterSeq: this.dataModel.response.activityCode
             },
         };
 
@@ -464,8 +473,6 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
                     (res: any) => {
                         if (res.succeedYn) {
                             this.dataModel.response = _.cloneDeep(res.result);
-                            console.log('성공이다~~~~');
-
                         } else {
                             this.alertService.showApiAlert(res.errorMessage);
                         }
@@ -493,20 +500,13 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
             this.document.location.href = res;
             console.log(this.rqInfo, 'this.rqInfo');
             console.log(res, 'res');
-
-
         } else {
             const initialState: any = {
-                storeId: 'activity-modal-qna'
+                storeId: 'activity-modal-qna',
+                rqInfo: rqInfo
             };
 
-            // ngx-bootstrap config
-            const configInfo = {
-                class: 'm-ngx-bootstrap-modal',
-                animated: false
-            };
-
-            this.bsModalQnaRef = this.bsModalService.show(ActivityModalProductQnaComponent, { initialState, ...configInfo });
+            this.bsModalQnaRef = this.bsModalService.show(ActivityModalProductQnaComponent, { initialState, ...ConfigInfo });
         }
     }
 
@@ -535,5 +535,23 @@ export class ActivitySearchResultDetailPageComponent extends BasePageComponent i
         const qsStr = qs.stringify(activityOptionInfo);
         const path = ActivityCommon.PAGE_SEARCH_RESULT_OPTION + qsStr;
         this.router.navigate([path], { relativeTo: this.route });
+    }
+
+    public moreInfo(event: MouseEvent, item: any) {
+        event && event.preventDefault();
+
+        item.more = true;
+    }
+
+
+    public selecItineraries(event: MouseEvent, index: number) {
+        event && event.preventDefault();
+
+        this.viewModel.itineraries[index].active = !this.viewModel.itineraries[index].active;
+    }
+
+    public imageError(event: any) {
+        const $img = event.target;
+        $img.src = '/assets/images/icons/ico-nodata-image.png';
     }
 }

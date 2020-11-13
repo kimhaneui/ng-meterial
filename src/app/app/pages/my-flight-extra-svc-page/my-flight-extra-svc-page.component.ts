@@ -1,19 +1,28 @@
 import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
-import { BasePageComponent } from '../base-page/base-page.component';
 import { Title, Meta } from '@angular/platform-browser';
-import { SeoCanonicalService } from 'src/app/common-source/services/seo-canonical/seo-canonical.service';
-import { TranslateService } from '@ngx-translate/core';
-import { Store } from '@ngrx/store';
 import { ActivatedRoute } from '@angular/router';
-import { BsModalService } from 'ngx-bootstrap/modal';
 import { take } from 'rxjs/operators';
-import { HeaderTypes } from 'src/app/common-source/enums/header-types.enum';
+import { Subscription } from 'rxjs';
+
+import { Store } from '@ngrx/store';
+
 import { upsertMyFlightExtraSvcPage } from 'src/app/store/my-flight-extra-svc-page/my-flight-extra-svc-page/my-flight-extra-svc-page.actions';
+
+import { TranslateService } from '@ngx-translate/core';
+import { BsModalService } from 'ngx-bootstrap/modal';
+
+import * as _ from 'lodash';
+
+import { SeoCanonicalService } from 'src/app/common-source/services/seo-canonical/seo-canonical.service';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { HeaderTypes } from 'src/app/common-source/enums/header-types.enum';
+
+import { BasePageComponent } from '../base-page/base-page.component';
 import { MyModalFlightBagDropComponent } from './modal-components/my-modal-flight-bag-drop/my-modal-flight-bag-drop.component';
 import { MyModalFlightMealComponent } from './modal-components/my-modal-flight-meal/my-modal-flight-meal.component';
 import { MyModalSeatmapComponent } from './modal-components/my-modal-seatmap/my-modal-seatmap.component';
-import * as _ from 'lodash';
-import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-my-flight-extra-svc-page',
@@ -78,7 +87,7 @@ export class MyFlightExtraSvcPageComponent extends BasePageComponent implements 
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -115,7 +124,6 @@ export class MyFlightExtraSvcPageComponent extends BasePageComponent implements 
         //         this.apiRentService.POST_RENT_LIST($resolveData.listFilterRq)
         //     ])
         //         .pipe(
-        //             takeWhile(val => this.rxAlive),
         //             catchError(([err1, err2]) => of([err1, err2])
         //             )
         //                 .subscribe(
@@ -168,12 +176,7 @@ export class MyFlightExtraSvcPageComponent extends BasePageComponent implements 
             storeId: storeId
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(MyModalFlightBagDropComponent, { initialState, ...configInfo });
+        this.bsModalService.show(MyModalFlightBagDropComponent, { initialState, ...ConfigInfo });
 
 
     }
@@ -188,12 +191,7 @@ export class MyFlightExtraSvcPageComponent extends BasePageComponent implements 
             storeId: storeId
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(MyModalFlightMealComponent, { initialState, ...configInfo });
+        this.bsModalService.show(MyModalFlightMealComponent, { initialState, ...ConfigInfo });
     }
 
     onSeatmapClick() {
@@ -205,13 +203,7 @@ export class MyFlightExtraSvcPageComponent extends BasePageComponent implements 
         const initialState = {
             storeId: storeId
         };
-
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(MyModalSeatmapComponent, { initialState, ...configInfo });
+        this.bsModalService.show(MyModalSeatmapComponent, { initialState, ...ConfigInfo });
 
     }
 

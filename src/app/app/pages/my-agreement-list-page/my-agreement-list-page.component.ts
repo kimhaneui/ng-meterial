@@ -99,7 +99,7 @@ export class MyAgreementListPageComponent extends BasePageComponent implements O
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );

@@ -1,8 +1,7 @@
 import { Component, OnInit, PLATFORM_ID, Inject, OnDestroy } from '@angular/core';
 import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 import { Store } from '@ngrx/store';
 
@@ -12,6 +11,8 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 
 import * as _ from 'lodash';
 import * as qs from 'qs';
+
+import { FlightStore } from '../../enums/flight/flight-store.enum';
 
 import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 
@@ -25,9 +26,6 @@ export class FlightModalAlignFilterComponent extends BaseChildComponent implemen
     isSubmitted = false;
 
     listRS: any;
-
-    flightSearchListRQ$: Observable<any>;
-    flightSearchListRS$: Observable<any>;
 
     private subscriptionList: Subscription[];
 
@@ -87,7 +85,7 @@ export class FlightModalAlignFilterComponent extends BaseChildComponent implemen
         private router: Router,
         private fb: FormBuilder,
         private store: Store<any>,
-        public bsModalRef: BsModalRef
+        private bsModalRef: BsModalRef
     ) {
         super(platformId);
         this.subscriptionList = [];
@@ -101,7 +99,6 @@ export class FlightModalAlignFilterComponent extends BaseChildComponent implemen
         bodyEl.classList.add('overflow-none');
 
         this.formInit();
-        this.storeInit();
         this.storeSubscribe();
     }
 
@@ -123,22 +120,12 @@ export class FlightModalAlignFilterComponent extends BaseChildComponent implemen
         });
     }
 
-    storeInit() {
-        this.flightSearchListRS$ = this.store.select(
-            flightSearchResultSelector.getSelectId(['flight-list-rs'])
-        );
-
-        this.flightSearchListRQ$ = this.store.select(
-            flightSearchResultSelector.getSelectId(['flight-list-rq-info'])
-        );
-    }
-
     storeSubscribe() {
         this.subscriptionList.push(
-            this.flightSearchListRS$
-                .pipe(takeWhile(() => this.alive))
+            this.store
+                .select(flightSearchResultSelector.getSelectId([FlightStore.STORE_FLIGHT_LIST_RS]))
                 .subscribe(
-                    ev => {
+                    (ev: any) => {
                         console.info('[flightSearchListRS$ > subscribe]', ev);
                         if (ev) {
                             this.listRS = ev.option;
@@ -151,10 +138,10 @@ export class FlightModalAlignFilterComponent extends BaseChildComponent implemen
         );
 
         this.subscriptionList.push(
-            this.flightSearchListRQ$
-                .pipe(takeWhile(() => this.alive))
+            this.store
+                .select(flightSearchResultSelector.getSelectId([FlightStore.STORE_FLIGHT_LIST_RQ]))
                 .subscribe(
-                    ev => {
+                    (ev: any) => {
                         console.info('[flightSearchListRQ$ > subscribe]', ev);
                     }
                 )

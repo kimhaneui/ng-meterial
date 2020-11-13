@@ -1,4 +1,4 @@
-import { CardType, PaymentStyle } from '@/app/common-source/models/booking.model';
+import { CardType, PaymentStyle } from '../common/booking.model';
 
 export const UseCardSet: CardType[] = [
     { code: '', text: '카드를 선택해 주세요.', selected: true },

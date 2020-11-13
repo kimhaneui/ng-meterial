@@ -1,18 +1,21 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { debounceTime, filter, pairwise, take } from 'rxjs/operators';
-import * as _ from 'lodash';
-import { select, Store } from '@ngrx/store';
-import { upsertCommonRoute } from '../../../store/common/common-route/common-route.actions';
-import * as commonRouteSelectors from '../../../store/common/common-route/common-route.selectors';
 import { Subscription } from 'rxjs';
+import { debounceTime, filter, pairwise, take } from 'rxjs/operators';
+
+import { select, Store } from '@ngrx/store';
+
+import { upsertCommonRoute } from '../../../store/common/common-route/common-route.actions';
+
+import * as commonRouteSelectors from '../../../store/common/common-route/common-route.selectors';
+
+import * as _ from 'lodash';
 
 @Injectable({
     providedIn: 'root'
 })
 export class RouterHistoryService implements OnDestroy {
     history = [];
-    previousRoute$: any;
     private subscriptionList: Subscription[];
 
     constructor(
@@ -22,7 +25,6 @@ export class RouterHistoryService implements OnDestroy {
         this.subscriptionList = [];
         console.info('[RouterHistoryService > constructor]', this.history);
         this.historyInit();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -44,7 +46,7 @@ export class RouterHistoryService implements OnDestroy {
             this.store
                 .pipe(
                     take(1),
-                    select(commonRouteSelectors.getSelectId('router-history'))
+                    select(commonRouteSelectors.getSelectId(['router-history']))
                 )
                 .subscribe(
                     (rv: any) => {
@@ -61,23 +63,14 @@ export class RouterHistoryService implements OnDestroy {
         );
     }
 
-    /**
-     * 이전, 현재 url 가져오기
-     * NavigationEnd 라우팅 이벤트
-     * debounceTime 일정시간동안 반복적인 값은 버림
-     * pairwise 이전 이후 데이터 출력
-     */
-    observableInit() {
-        this.previousRoute$ = this.router.events.pipe(
-            filter(e => e instanceof NavigationEnd),
-            debounceTime(500),
-            pairwise()
-        );
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.previousRoute$
+            this.router.events
+                .pipe(
+                    filter(e => e instanceof NavigationEnd),
+                    debounceTime(500),
+                    pairwise()
+                )
                 .subscribe(
                     (ev: any) => {
                         console.info('[previousRoute$]', ev);
@@ -116,10 +109,4 @@ export class RouterHistoryService implements OnDestroy {
     public getHistory(): string[] {
         return this.history;
     }
-
-    // public getPreviousUrl(): string {
-    //     return this.history[this.history.length - 2] || '/index';
-    // }
-
-
 }

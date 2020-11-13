@@ -1,16 +1,14 @@
 import { Component, OnInit, Input, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { Store } from '@ngrx/store';
-
-import * as flightSearhchResultSelector from 'src/app/store/flight-common/flight-search-result/flight-search-result.selectors';
-
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 
 import * as _ from 'lodash';
 
 import { ApiFlightService } from 'src/app/api/flight/api-flight.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { BaseChildComponent } from 'src/app/pages/base-page/components/base-child/base-child.component';
 import { AirtelModalPaymentDetailComponent } from 'src/app/common-source/modal-components/airtel-modal-payment-detail/airtel-modal-payment-detail.component';
@@ -27,10 +25,6 @@ export class AirtelModalPaymentComponent extends BaseChildComponent implements O
     isClose: any = false;
 
     resultList: any;
-
-    flightListRs$: Observable<any>;
-    // flightListRq$: Observable<any>;
-
     vm: any = {
         cardType: [
             {
@@ -50,9 +44,11 @@ export class AirtelModalPaymentComponent extends BaseChildComponent implements O
     };
 
     cabinClassTxt: any;
+    list: any;
+    flightListRs$: Observable<any>;
+
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        private store: Store<any>,
         public bsModalRef: BsModalRef,
         private bsModalSvc: BsModalService,
         private apiflightSvc: ApiFlightService,
@@ -77,17 +73,13 @@ export class AirtelModalPaymentComponent extends BaseChildComponent implements O
         bodyEl.classList.remove('overflow-none');
     }
     init() {
-        // const sessionVm: any = JSON.parse(sessionStorage.getItem('flight-common'));
+        // const sessionVm: any = JSON.parse(sessionStorage.getItem(FlightStore.STORE_FLIGHT_COMMON));
         // this.cabinClassTxt = sessionVm.flightSessionStorages.entities["flight-main-vmInfo"].option.travelerStore.cabinClassTxt;
 
     }
     storeInit() {
-        this.flightListRs$ = this.store.select(
-            flightSearhchResultSelector.getSelectId('flight-list-rs')
-        );
-
         // this.flightListRq$ = this.store.select(
-        //   flightSearhchResultSelector.getSelectId('flight-list-rq-info')
+        //   flightSearhchResultSelector.getSelectId(FlightStore.STORE_FLIGHT_LIST_RQ)
         // );
     }
 
@@ -104,18 +96,14 @@ export class AirtelModalPaymentComponent extends BaseChildComponent implements O
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
         console.info('[3. API 호출 끝]');
     }
 
 
     onPayDetail() {
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalDetailRef = this.bsModalSvc.show(AirtelModalPaymentDetailComponent, { ...configInfo });
+        this.bsModalDetailRef = this.bsModalSvc.show(AirtelModalPaymentDetailComponent, { ...ConfigInfo });
     }
 
     onReserve() {

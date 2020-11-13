@@ -83,7 +83,7 @@ export class MyModalHotelBookerModifyComponent extends BaseChildComponent implem
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -113,7 +113,7 @@ export class MyModalHotelBookerModifyComponent extends BaseChildComponent implem
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 

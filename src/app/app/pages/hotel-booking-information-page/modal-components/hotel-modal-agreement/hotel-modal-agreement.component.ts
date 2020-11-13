@@ -119,7 +119,7 @@ export class HotelModalAgreementComponent extends BaseChildComponent implements 
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );

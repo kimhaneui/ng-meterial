@@ -78,7 +78,23 @@
                         </div>
                         <div class="item-row col">
                             <div class="left">여행 기간</div>
-                            <div class="right">{{summary?.travelFromDate | date:'y.MM.dd'}}({{fromLabel}}) - {{summary?.travelToDate | date:'y.MM.dd'}}({{toLabel}}) <span class="color-point2">[D-{{summary?.leftDays}}]</span></div>
+                            <!-- {{summary?.travelFromDate | date:'y.MM.dd'}}({{fromLabel}}) - {{summary?.travelToDate | date:'y.MM.dd'}}({{toLabel}}) -->
+                            <!-- <span class="color-point2">[D-{{summary?.leftDays}}]</span> -->
+                            <div class="right">
+                                <ng-container [ngSwitch]="summary.tripTypeName">
+                                    <ng-container *ngSwitchCase="'편도'">
+                                        {{summary?.travelFromDate | date:'y.MM.dd'}}({{fromLabel}})
+                                        <span class="icon md wifi"></span>
+                                    </ng-container>
+                                    <ng-container *ngSwitchCase="'왕복'">
+                                        {{summary?.travelFromDate | date:'y.MM.dd'}}({{fromLabel}}) - {{summary?.travelToDate | date:'y.MM.dd'}}({{toLabel}})
+                                    </ng-container>
+                                    <ng-container *ngSwitchCase="'다구간'">
+                                        {{summary?.travelFromDate | date:'y.MM.dd'}}({{fromLabel}}) - {{summary?.travelToDate | date:'y.MM.dd'}}({{toLabel}})
+                                    </ng-container>
+                                </ng-container>
+                                <span class="color-point2">[D-{{summary?.leftDays}}]</span>
+                            </div>
                         </div>
                         <div class="item-row col">
                             <div class="left">여행자</div>

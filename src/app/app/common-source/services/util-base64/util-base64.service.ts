@@ -5,7 +5,6 @@ import { Base64 } from 'js-base64';
     providedIn: 'root'
 })
 export class UtilBase64Service {
-
     constructor() {
     }
 
@@ -27,7 +26,6 @@ export class UtilBase64Service {
         const temp1 = this.stringToJson(temp0);
         return temp1;
     }
-
 
     /**
      * base64 인코딩
@@ -60,6 +58,4 @@ export class UtilBase64Service {
     stringToJson($str: string): any {
         return JSON.parse($str);
     }
-
-
 }

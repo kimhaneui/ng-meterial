@@ -7,25 +7,19 @@
             <div class="activity-result-option">
                 <div class="input">
                     <span class="icon sm search"></span>
-                    <!-- <input type="text" 
-                            class="bg" 
-                            autocomplete="off" 
+                    <!-- <input type="text"
+                            class="bg"
+                            autocomplete="off"
                             #filterCity
                             *ngIf="optionType == 'CITY'"
                             (keyup.enter)="treeCity.treeModel.filterNodes(filterCity.value)"
                             [placeholder]="'MODAL_OPTION.SEARCH_CITY_PLACEHOLDER' | translate"> -->
 
-                    <input type="text" 
-                            class="bg" 
-                            autocomplete="off" 
-                            #filterCategory
-                            *ngIf="optionType == 'CATEGORY'"
-                            (keyup.enter)="treeCategory.treeModel.filterNodes(filterCategory.value)"
-                            [placeholder]="'MODAL_OPTION.SEARCH_CATEGORY_PLACEHOLDER' | translate">
+                    <input type="text" class="bg" autocomplete="off" #filterCategory *ngIf="optionType === 'CATEGORY'" (keyup.enter)="treeCategory.treeModel.filterNodes(filterCategory.value)" [placeholder]="'MODAL_OPTION.SEARCH_CATEGORY_PLACEHOLDER' | translate">
 
                 </div>
                 <div class="tab-wrap">
-                    <!-- 
+                    <!--
                     도시 필터 제외. 박종선(2020.06.03)
                     <tabset class="m-ngx-bootstrap-tabs-modal">
                         <tab [active]="(optionType == 'CITY') ? true : false" (selectTab)="onSelectTab('CITY')">
@@ -54,7 +48,7 @@
                                                             type="checkbox"
                                                             [indeterminate]="node.data.indeterminate"
                                                             [checked]="node.data.checked">
-                                                    <span class="checkbox-control-text" 
+                                                    <span class="checkbox-control-text"
                                                         [ngClass]="getClassChk(node.data.checked, node.data.indeterminate)" >
                                                         {{ node.data.name }}&nbsp;<span class="color-sub3 ml5 align-m">{{ node.data.count }}</span>
                                                     </span>
@@ -75,31 +69,20 @@
                                     <span class="txt">카테고리</span>
                                 </span>
                             </ng-template>
-                            
+
                         </tab>
                     </tabset> -->
                     <ul class="row-list">
 
                         <li class="li">
-                            <tree-root #treeCategory
-                                       [(state)]="state"
-                                       [nodes]="categoriesNodes"
-                                       [options]="continentsOptions"
-                                       class="m-tree-component">
+                            <tree-root #treeCategory [(state)]="state" [nodes]="categoriesNodes" [options]="continentsOptions" class="m-tree-component">
 
-                                <ng-template #treeNodeTemplate
-                                             let-node="node"
-                                             let-index="index" class="tpl-area" >
+                                <ng-template #treeNodeTemplate let-node="node" let-index="index" class="tpl-area">
 
-                                    <div class="row-area" [ngStyle]="getPaddingLeft(node.level)" >
+                                    <div class="row-area" [ngStyle]="getPaddingLeft(node.level)">
                                         <label class="checkbox">
-                                            <input  class="checkbox-control-input"
-                                                    (change)="check(node, !node.data.checked)"
-                                                    type="checkbox"
-                                                    [indeterminate]="node.data.indeterminate"
-                                                    [checked]="node.data.checked">
-                                            <span class="checkbox-control-text" 
-                                                [ngClass]="getClassChk(node.data.checked, node.data.indeterminate)" >
+                                            <input class="checkbox-control-input" (change)="check(node, !node.data.checked)" type="checkbox" [indeterminate]="node.data.indeterminate" [checked]="node.data.checked">
+                                            <span class="checkbox-control-text" [ngClass]="getClassChk(node.data.checked, node.data.indeterminate)">
                                                 {{ node.data.name }}&nbsp;<span class="color-sub3 ml5 align-m">{{ node.data.count }}</span>
                                             </span>
                                         </label>

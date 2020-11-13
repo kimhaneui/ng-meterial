@@ -15,6 +15,7 @@ import { HeaderTypes } from '@/app/common-source/enums/header-types.enum';
 
 import { BasePageComponent } from '../base-page/base-page.component';
 import { environment } from '@/environments/environment';
+import { FlightStore } from '@/app/common-source/enums/flight/flight-store.enum';
 
 @Component({
     selector: 'app-flight-booking-complete-page',
@@ -78,9 +79,9 @@ export class FlightBookingCompletePageComponent extends BasePageComponent implem
     }
 
     private sessionInit() {
-        const sessionItem = JSON.parse(localStorage.getItem('flight-common'));
+        const sessionItem = JSON.parse(localStorage.getItem(FlightStore.STORE_FLIGHT_COMMON));
         if (!_.isEmpty(sessionItem.flightSessionStorages.entities)) {
-            this.sessionRQ = sessionItem.flightSessionStorages.entities['flight-booking-complete'].option;
+            this.sessionRQ = sessionItem.flightSessionStorages.entities[FlightStore.STORE_FLIGHT_BOOKING_COMPLETE].option;
 
             const rqInfo =
             {

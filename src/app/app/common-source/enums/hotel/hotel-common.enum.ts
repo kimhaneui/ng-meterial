@@ -8,4 +8,5 @@ export enum HotelCommon {
     PAGE_BOOKING_COMPLETE = '/hotel-booking-complete',
 
     IITEM_CATEGORY_CODE = 'IC02',
+    ITEM_RESERVE_CODE = '2',
 }

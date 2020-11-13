@@ -67,7 +67,6 @@ export class ActivityCityIntroPageComponent extends BasePageComponent implements
 
     ngOnInit() {
         super.ngOnInit();
-        this.storeActivityCommonInit(); // store > activity-common 초기화
     }
 
     ngOnDestroy() {
@@ -79,6 +78,7 @@ export class ActivityCityIntroPageComponent extends BasePageComponent implements
     }
 
     private subscribeInit() {
+        this.store.dispatch(clearActivityModalDestinations());
         /**
          * 초기화 데이터
          */
@@ -137,7 +137,7 @@ export class ActivityCityIntroPageComponent extends BasePageComponent implements
                         }
                     },
                     (err: any) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         );
@@ -161,12 +161,5 @@ export class ActivityCityIntroPageComponent extends BasePageComponent implements
         this.store.dispatch(upsertActivityCitySearch({
             activityCitySearch: $obj
         }));
-    }
-
-    /**
-     * store > activity-common 초기화
-     */
-    storeActivityCommonInit() {
-        this.store.dispatch(clearActivityModalDestinations());
     }
 }

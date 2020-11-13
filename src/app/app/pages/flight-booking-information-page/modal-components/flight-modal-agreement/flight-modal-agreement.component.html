@@ -17,8 +17,7 @@
                     <div class="page-contents-type2 pb0">
                         <div class="agreement-data-format">
                             <ul class="text-list spacing">
-                                <li [innerHTML]="this.agreeList.common">
-                                </li>
+                                <li [innerHTML]="this.agreeList.common"></li>
                             </ul>
                         </div>
                     </div>
@@ -27,28 +26,27 @@
                     <ng-template tabHeading>
                         <span>요금/취소/환불 규정</span>
                     </ng-template>
-
-                    <div *ngFor="let listItem of viewModel.fareRuleList; index as index;" class="page-contents-type2 pb0">
-                        <h2 class="font-lg-b mb20">{{ listItem.segmentTitle }}</h2>
-                        <div class="table bordered-top-bottom">
-                            <table>
+                    <div class="page-contents-type2">
+                        <div *ngFor="let listItem of viewModel.fareRuleList; index as index;" class="contents-item">
+                            <h2 class="contents-title">{{ listItem.segmentTitle }}</h2>
+                            <table class="table-type1">
                                 <colgroup>
-                                    <col width="30%">
+                                    <col width="35%">
                                     <col>
                                 </colgroup>
                                 <tbody>
                                     <tr *ngFor="let item of listItem.ruleList">
-                                        <th scope="row" class="bg">{{ item.title }}</th>
+                                        <th scope="row">{{ item.title }}</th>
                                         <td [innerHTML]="item.description"></td>
                                     </tr>
                                     <tr>
-                                        <th scope="row" class="bg">무료수하물</th>
+                                        <th scope="row">무료수하물</th>
                                         <td>{{ baggageList[index] }}</td>
                                     </tr>
                                     <tr *ngIf="false">
-                                        <th scope="row" class="bg">여행사<br>취급수수료</th>
+                                        <th scope="row">여행사<br>취급수수료</th>
                                         <td>
-                                            <ul class="text-list xs dot">
+                                            <ul class="text-list">
                                                 <li>변경으로 인한 재발행발생시나 환불시 항공사취소 수수료외에 여행사 취급수수료가 부과됩니다.</li>
                                                 <li>환불 수수료(성인/소아/유아 동일) : 10,000원(1인)</li>
                                                 <li>재발행 수수료(성인/소아/유아 동일) : 30,000원</li>

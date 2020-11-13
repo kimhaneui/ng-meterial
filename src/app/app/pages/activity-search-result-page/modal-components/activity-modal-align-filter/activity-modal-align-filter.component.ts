@@ -1,10 +1,9 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import * as activitySearchResultPageSelectors from '../../../../store/activity-search-result-page/activity-result-search/activity-result-search.selectors';
 
@@ -42,8 +41,6 @@ export class ActivityModalAlignFilterComponent extends BaseChildComponent implem
     };
 
     rxAlive: boolean = true;
-    activityListRq$: Observable<any>; // 액티비티 검색 request
-    activityListRs$: Observable<any>; // 액티비티 검색 결과
 
     loadingBool: boolean = false;
 
@@ -55,7 +52,7 @@ export class ActivityModalAlignFilterComponent extends BaseChildComponent implem
         private store: Store<any>,
         private router: Router,
         private fb: FormBuilder,
-        private readonly activityComServiceService: ActivityComServiceService,
+        private activityComServiceService: ActivityComServiceService,
         public bsModalRef: BsModalRef
     ) {
         super(platformId);
@@ -71,7 +68,6 @@ export class ActivityModalAlignFilterComponent extends BaseChildComponent implem
 
         this.rxAlive = true;
         this.mainFormCreate();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -95,17 +91,10 @@ export class ActivityModalAlignFilterComponent extends BaseChildComponent implem
         });
     }
 
-    observableInit() {
-        this.activityListRq$ = this.store
-            .pipe(select(activitySearchResultPageSelectors.getSelectId(ActivityStore.STORE_RESULT_LIST_RQ)));
-        this.activityListRs$ = this.store
-            .pipe(select(activitySearchResultPageSelectors.getSelectId(ActivityStore.STORE_RESULT_LIST_RS)));
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.activityListRq$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(activitySearchResultPageSelectors.getSelectId(ActivityStore.STORE_RESULT_LIST_RQ))
                 .subscribe(
                     (ev: any) => {
                         if (ev) {
@@ -117,9 +106,10 @@ export class ActivityModalAlignFilterComponent extends BaseChildComponent implem
                     }
                 )
         );
+
         this.subscriptionList.push(
-            this.activityListRs$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(activitySearchResultPageSelectors.getSelectId(ActivityStore.STORE_RESULT_LIST_RS))
                 .subscribe(
                     (ev: any) => {
                         if (ev) {

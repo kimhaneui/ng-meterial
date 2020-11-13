@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { ReviewDetailComponent } from '../review-detail/review-detail.component';
 
@@ -24,15 +27,8 @@ export class ReviewWriteCompleteComponent implements OnInit {
         this.bsModalRef.hide();
     }
     reviewDetail() {
-        const initialState = {
-
-        };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(ReviewDetailComponent, { initialState, ...configInfo });
+        const initialState = {};
+        this.bsModalService.show(ReviewDetailComponent, { initialState, ...ConfigInfo });
     }
     myReviewList() {
         this.modalClose();

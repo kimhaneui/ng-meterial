@@ -21,10 +21,10 @@ export class FlightMainPageComponent extends BasePageComponent implements OnInit
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        titleService: Title,
-        metaTagService: Meta,
-        seoCanonicalService: SeoCanonicalService,
-        translate: TranslateService
+        public titleService: Title,
+        public metaTagService: Meta,
+        public seoCanonicalService: SeoCanonicalService,
+        public translate: TranslateService
     ) {
         super(
             platformId,

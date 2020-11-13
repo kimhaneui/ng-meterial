@@ -18,7 +18,6 @@ import { ActivityBookingInformationPageModule } from './activity-booking-informa
 import { ActivityBookingCompletePageModule } from './activity-booking-complete-page/activity-booking-complete-page.module';
 import { IndexPageModule } from './index-page/index-page.module';
 import { HotelBookingPaymentPageModule } from './hotel-booking-payment-page/hotel-booking-payment-page.module';
-import { CommonPaymentCompletePageModule } from './common-payment-complete-page/common-payment-complete-page.module';
 import { FlightBookingPaymentPageModule } from './flight-booking-payment-page/flight-booking-payment-page.module';
 
 import { BaseChildComponent } from './base-page/components/base-child/base-child.component';
@@ -59,7 +58,6 @@ import { ActivityBookingPaymentPageModule } from './activity-booking-payment-pag
         ActivityBookingInformationPageModule,
         ActivityBookingCompletePageModule,
 
-        CommonPaymentCompletePageModule,
         CmSystemErrorModule,
         ActivityBookingPaymentPageModule,
 

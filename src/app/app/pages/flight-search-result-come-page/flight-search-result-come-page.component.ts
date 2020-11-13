@@ -3,7 +3,7 @@ import { DatePipe, Location } from '@angular/common';
 import { Title, Meta } from '@angular/platform-browser';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import { Store } from '@ngrx/store';
 
@@ -23,6 +23,9 @@ import { ApiFlightService } from '@/app/api/flight/api-flight.service';
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
 
 import { HeaderTypes } from '@/app/common-source/enums/header-types.enum';
+import { FlightStore } from '@/app/common-source/enums/flight/flight-store.enum';
+
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 import { BasePageComponent } from '../base-page/base-page.component';
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
@@ -64,11 +67,6 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
     rxAlive: any = true;
 
     howMany: any = '';
-
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
 
     infiniteScrollConfig: any = {
         distance: 1,
@@ -135,7 +133,7 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
 
                         // 스토어에 modelData 저장
                         console.info('[스토어에 flight-list-rq-info 저장 시작]');
-                        this.modelInit('flight-list-rq-info', modelData, 'flightSearchResultComePage');
+                        this.modelInit(FlightStore.STORE_FLIGHT_LIST_RQ, modelData, 'flightSearchResultComePage');
 
                         console.info('[2. 헤더 초기화 시작]');
                         this.pageInit(this.resolveData);
@@ -218,7 +216,7 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
      */
     async flightSearch($resolveData) {
         // ---------[api 호출 | 항공편 리스트(오는편)]
-        // const bsModalLoadingRef = this.bsModalService.show(CommonLoadingModalComponent, { ...this.configInfo });
+        // const bsModalLoadingRef = this.bsModalService.show(CommonLoadingModalComponent, { ...ConfigInfo });
 
         await this.apiflightSvc.POST_FLIGHT_LIST_ITINERARY($resolveData)
             .toPromise()
@@ -228,7 +226,7 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
                     this.resultList = _.cloneDeep(res);
                     this.isSearchDone = false;
                     console.info('[스토어에 flight-list-rs 저장]');
-                    this.modelInit('flight-list-rs', this.resultList);
+                    this.modelInit(FlightStore.STORE_FLIGHT_LIST_RS, this.resultList);
 
                     this.loadingBool = false;
                     this.loadingBar.complete();
@@ -237,7 +235,7 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
         // bsModalLoadingRef.hide();
         console.info('[3. API 호출 끝]');
@@ -278,7 +276,7 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
             vm: this.vmInfo
         };
 
-        const bsModalRef = this.bsModalService.show(FlightModalScheduleComponent, { initialState, ...this.configInfo });
+        const bsModalRef = this.bsModalService.show(FlightModalScheduleComponent, { initialState, ...ConfigInfo });
 
         this.subscriptionList.push(
             this.bsModalService.onHide
@@ -305,7 +303,7 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
                 .pipe(take(1))
                 .subscribe(
                     (status: any) => {
-                        if (status === 'END') {
+                        if (status === 'STOP') {
                             this.rxAlive = false;
                             console.info('[status]', status);
                             console.info('[rxAlive]', this.rxAlive);
@@ -411,19 +409,14 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     /**
     * 모든 bsModalService 닫기
     */
     closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -433,7 +426,7 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
      */
     onDetailFilter() {
         console.info('[ 필터 | 상세 ]');
-        this.bsModalFilterRef = this.bsModalService.show(FlightModalDetailFilterComponent, { ...this.configInfo });
+        this.bsModalFilterRef = this.bsModalService.show(FlightModalDetailFilterComponent, { ...ConfigInfo });
     }
 
     /**
@@ -441,15 +434,14 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
      */
     onAlignFilter() {
         console.info('[ 필터 | 정렬 ]');
-        this.bsModalAlignRef = this.bsModalService.show(FlightModalAlignFilterComponent, { ...this.configInfo });
+        this.bsModalAlignRef = this.bsModalService.show(FlightModalAlignFilterComponent, { ...ConfigInfo });
     }
 
     /**
      * 가격 알람 모달
      */
     onAlarm($ctx) {
-
-        $ctx.bsModalAlarmRef = $ctx.bsModalService.show(FlightModalPriceAlarmComponent, { ...this.configInfo });
+        $ctx.bsModalAlarmRef = $ctx.bsModalService.show(FlightModalPriceAlarmComponent, { ...ConfigInfo });
     }
 
     onBackBtnClick($ctx) {
@@ -460,11 +452,9 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
     onChangeBtnClick($ctx) {
         console.info('[변경 버튼 클릭]');
         if ($ctx.isSearchDone) {
-            $ctx.bsModalChangeRef = $ctx.bsModalService.show(FlightModalResearchComponent, { ...this.configInfo });
-
+            $ctx.bsModalChangeRef = $ctx.bsModalService.show(FlightModalResearchComponent, { ...ConfigInfo });
             this.subscriptionList.push(
                 $ctx.bsModalService.onHide
-                    .pipe(takeWhile(() => $ctx.rxAlive))
                     .subscribe(
                         () => {
                             const path = $ctx.bsModalChangeRef.content.naviPath;
@@ -477,7 +467,6 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
                     )
             );
         }
-
     }
 
     async onScroll() {
@@ -505,6 +494,7 @@ export class FlightSearchResultComePageComponent extends BasePageComponent imple
 
         // 재검색
         this.loadingBar.start();
+        await this.flightSearch(this.flightSearhRQ);
 
         this.resultList.result.flights = [...flightsList, ...this.resultList.result.flights];
     }

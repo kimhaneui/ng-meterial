@@ -3,6 +3,8 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 
 import { BaseChildComponent } from '../../../base-page/components/base-child/base-child.component';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { RentModalDemandsComponent } from '../../modal-components/rent-modal-demands/rent-modal-demands.component';
 import { RentModalAmericaComponent } from '../../modal-components/rent-modal-america/rent-modal-america.component';
 import { RentModalCanadaComponent } from '../../modal-components/rent-modal-canada/rent-modal-canada.component';
@@ -29,45 +31,27 @@ export class RentGuideBtnComponent extends BaseChildComponent implements OnInit 
         const initialState = {
 
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(RentModalDemandsComponent, { initialState, ...configInfo });
+
+        this.bsModalService.show(RentModalDemandsComponent, { initialState, ...ConfigInfo });
     }
     americaClick() {
         const initialState = {
 
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(RentModalAmericaComponent, { initialState, ...configInfo });
+
+        this.bsModalService.show(RentModalAmericaComponent, { initialState, ...ConfigInfo });
     }
     canadaClick() {
         const initialState = {
 
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(RentModalCanadaComponent, { initialState, ...configInfo });
+
+        this.bsModalService.show(RentModalCanadaComponent, { initialState, ...ConfigInfo });
     }
     europeClick() {
-        const initialState = {
+        const initialState = {};
 
-        };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(RentModalEuropeComponent, { initialState, ...configInfo });
+        this.bsModalService.show(RentModalEuropeComponent, { initialState, ...ConfigInfo });
     }
 
 }

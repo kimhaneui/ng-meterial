@@ -1,9 +1,9 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { clearActivityModalDestinations } from '@app/store/activity-common/activity-modal-destination/activity-modal-destination.actions';
 
@@ -15,11 +15,17 @@ import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import * as _ from 'lodash';
 import * as qs from 'qs';
 
+import { MajorDestinationService } from '@/app/common-source/services/major-destination/major-destination.service';
+
 import { environment } from '@/environments/environment';
 
+import { RequestParam, RequestSet } from '@/app/common-source/models/common/condition.model';
+import { majorDestinationRq } from '@/app/common-source/models/common/major-destination.model';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
-import { ActivityInput } from '@/app/common-source/enums/activity/activity-input.enum';
 import { ActivityCommon } from '@/app/common-source/enums/activity/activity-common.enum';
+import { ActivitySearch } from '@/app/common-source/enums/activity/activity-search.enum';
+import { DestinationStore } from '@/app/common-source/enums/destination/destination-store.enum';
 
 import { BaseChildComponent } from '../../../base-page/components/base-child/base-child.component';
 import { ModalDestinationComponent } from '@/app/common-source/modal-components/modal-destination/modal-destination.component';
@@ -40,46 +46,58 @@ export class ActivityMainSearchComponent extends BaseChildComponent implements O
         categoryList: null
     };
 
-    rxAlive: boolean = true;
-    modalDestinationSearch$: Observable<any>; // 검색 모달창
-
     bsModalRef: BsModalRef;
+
     private subscriptionList: Subscription[];
+    private majorRq: RequestParam;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
-        private readonly store: Store<any>,
-        public translateService: TranslateService,
-        private readonly route: ActivatedRoute,
-        private readonly router: Router,
-        private bsModalService: BsModalService
+        private translateService: TranslateService,
+        private store: Store<any>,
+        private route: ActivatedRoute,
+        private router: Router,
+        private bsModalService: BsModalService,
+        private majorDestinationS: MajorDestinationService
     ) {
         super(platformId);
+
         this.subscriptionList = [];
+        this.getMajorDestination();
     }
 
     ngOnInit(): void {
         super.ngOnInit();
         this.storeActivityCommonInit(); // store > activity-common 초기화
         this.vmInit();
-        this.observableInit(); // 옵져버블 초기화
         this.subscribeInit(); // 서브스크라이브 초기화
     }
 
     ngOnDestroy() {
-        this.rxAlive = false;
         this.subscriptionList && this.subscriptionList.map(
             (item: Subscription) => {
                 item.unsubscribe();
             }
         );
+        this.closeAllModals();
+    }
+
+    private closeAllModals() {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
+            this.bsModalService.hide(i);
+        }
+    }
+
+    private getMajorDestination() {
+        this.majorRq = majorDestinationRq;
+        this.majorRq.condition.itemCategoryCode = ActivityCommon.IITEM_CATEGORY_CODE;
+        this.majorDestinationS.getMajorDestination(this.majorRq);
     }
 
     /**
      * vm 초기화
      */
     vmInit() {
-        this.rxAlive = true;
         this.vm.categoryList = [
             { categoryId: 'AC01', styleType: 'sim', categoryName: 'CATEGORY_ITEM_TITLE_TYPE1', translateName: '' }, // WIFI&SIM카드
             { categoryId: 'AC02', styleType: 'service', categoryName: 'CATEGORY_ITEM_TITLE_TYPE2', translateName: '' }, // 여행서비스
@@ -106,30 +124,21 @@ export class ActivityMainSearchComponent extends BaseChildComponent implements O
     }
 
     /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.modalDestinationSearch$ = this.store.pipe(
-            select(activityModalDestinationSelectors.getSelectId(['search']))
-        );
-    }
-
-    /**
      * 서브스크라이브 초기화
      */
     subscribeInit() {
         this.subscriptionList.push(
-            this.modalDestinationSearch$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(activityModalDestinationSelectors.getSelectId([DestinationStore.STORE_ACTIVITY]))
                 .subscribe(
                     (ev: any) => {
                         if (ev) {
                             this.vm.searchType = ev.type; // CITY : 도시 선택, CATEGORY : 카테고리 선택, DETAIL : 상품 선택.
 
-                            if (this.vm.searchType === ActivityInput.SEARCH_TYPE_CITY) {
+                            if (this.vm.searchType === ActivitySearch.SEARCH_TYPE_CITY) {
                                 this.vm.searchCityCode = ev.val;
                                 this.vm.searchCityName = ev.name;
-                            } else if (this.vm.searchType === ActivityInput.SEARCH_TYPE_DETAIL) {
+                            } else if (this.vm.searchType === ActivitySearch.SEARCH_TYPE_DETAIL) {
                                 this.vm.detailId = Number(ev.val);
                             }
 
@@ -149,11 +158,10 @@ export class ActivityMainSearchComponent extends BaseChildComponent implements O
             return;
         }
 
-
         let rqCondition = {};
         let tmpPath = '';
 
-        if (this.vm.searchType === ActivityInput.SEARCH_TYPE_DETAIL) {
+        if (this.vm.searchType === ActivitySearch.SEARCH_TYPE_DETAIL) {
             if (this.vm.detailId === null) { // Defensive coding
                 return;
             }
@@ -185,42 +193,27 @@ export class ActivityMainSearchComponent extends BaseChildComponent implements O
         }
 
         const activityMainInfo = {
-            rq: {
-                stationTypeCode: environment.STATION_CODE,
-                currency: 'KRW',  // TODO - user setting
-                language: 'KO', // TODO - user setting
-                condition: rqCondition
-            },
+            rq: _.cloneDeep(RequestSet),
             searchCityName: this.vm.searchCityName, // display용
             searchCategoryName: this.vm.searchCategoryName // display용
         };
+        activityMainInfo.rq.condition = rqCondition;
 
-        this.rxAlive = false;
         const qsStr = qs.stringify(activityMainInfo);
         const path = tmpPath + qsStr;
         const extras = {
             relativeTo: this.route
         };
 
-        console.log('activity-main-search.component : ', activityMainInfo);
+
         // this.location.replaceState(ActivityStore.PAGE_MAIN+);
+        this.ngOnDestroy();
         this.router.navigate([path], extras);
     }
 
     searchModal() {
         const initialState = {
-            storeId: 'search',
-            majorDestinationRq: { // 주요도시 API RQ
-                rq: {
-                    currency: 'KRW', // TODO - user setting
-                    language: 'KO', // TODO - user setting
-                    stationTypeCode: environment.STATION_CODE,
-                    condition: {
-                        itemCategoryCode: ActivityCommon.IITEM_CATEGORY_CODE,
-                        compCode: environment.COMP_CODE
-                    }
-                }
-            },
+            storeId: DestinationStore.STORE_ACTIVITY,
             destinationRq: { // 목적지검색 API RQ
                 rq: {
                     currency: 'KRW', // TODO - user setting
@@ -235,14 +228,8 @@ export class ActivityMainSearchComponent extends BaseChildComponent implements O
             }
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
         // console.info('[initialState]', initialState);
-        this.bsModalRef = this.bsModalService.show(ModalDestinationComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(ModalDestinationComponent, { initialState, ...ConfigInfo });
     }
 
     /**

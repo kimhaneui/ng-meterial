@@ -15,6 +15,7 @@ import { ModalModule } from 'ngx-bootstrap/modal';
 import { JwtService } from './services/jwt/jwt.service';
 import { WebShareService } from './services/web-share/web-share.service';
 import { StorageService } from './services/storage/storage.service';
+import { MajorDestinationService } from './services/major-destination/major-destination.service';
 
 import { CommonPipe } from './pipe/common.pipe';
 import { NumberPadPipe } from './pipe/number-pad/number-pad.pipe';
@@ -173,14 +174,15 @@ import { InicisFormComponent } from './components/inicis-form/inicis-form.compon
         MomentModule,
         LoadingBarModule,
         NgxTimerModule,
-        ScrollToModule.forRoot()
+        ScrollToModule.forRoot(),
     ],
     providers: [
         JwtService,
         DatePipe,
         WebShareService,
         StorageService,
-        NumberPadPipe
+        NumberPadPipe,
+        MajorDestinationService
     ],
     exports: [
         NgxTimerModule,

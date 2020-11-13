@@ -1,9 +1,8 @@
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import * as activityCityIntroPageSelectors from '../../../../store/activity-city-intro-page/activity-city-search/activity-city-search.selectors';
 
@@ -33,15 +32,13 @@ export class ActivityCityHotplaceComponent extends BaseChildComponent implements
     loadingBool: Boolean = false;
     rxAlive: boolean = true;
 
-    activityCityRs$: Observable<any>; // 액티비티 결과
-    activityCityName$: Observable<any>; // 액티비티 시티명
     private subscriptionList: Subscription[];
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
         private store: Store<any>,
-        private readonly route: ActivatedRoute,
-        private readonly router: Router,
+        private route: ActivatedRoute,
+        private router: Router,
     ) {
         super(platformId);
         this.subscriptionList = [];
@@ -56,7 +53,6 @@ export class ActivityCityHotplaceComponent extends BaseChildComponent implements
             name: ''
         };
 
-        this.observableInit(); // 옵져버블 초기화
         this.subscribeInit(); // 서브스크라이브 초기화
     }
 
@@ -70,22 +66,12 @@ export class ActivityCityHotplaceComponent extends BaseChildComponent implements
     }
 
     /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.activityCityRs$ = this.store
-            .pipe(select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_RS)));
-        this.activityCityName$ = this.store
-            .pipe(select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_CITYNAME)));
-    }
-
-    /**
      * 서브스크라이브 초기화
      */
     subscribeInit() {
         this.subscriptionList.push(
-            this.activityCityRs$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_RS))
                 .subscribe(
                     (ev: any) => {
                         // console.info('[activityCityRs$ > subscribe]', ev);
@@ -107,8 +93,8 @@ export class ActivityCityHotplaceComponent extends BaseChildComponent implements
         );
 
         this.subscriptionList.push(
-            this.activityCityName$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(activityCityIntroPageSelectors.getSelectId(ActivityStore.STORE_CITYINTRO_CITYNAME))
                 .subscribe(
                     (ev: any) => {
                         // console.info('[activityCityName$ > subscribe]', ev);

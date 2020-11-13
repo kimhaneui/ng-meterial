@@ -9,8 +9,8 @@
  * IC98,   // 시스템문의
  * IC99,   // 일반문의
  * ICE     // INTER-CITY EXPRESS
- * 
- * 20200213 현재 IC01 ~ IC05 까지만 사용함. 
+ *
+ * 20200213 현재 IC01 ~ IC05 까지만 사용함.
  * IC05는 내부적으로 어떤 값으로 사용되는지 확인이 필요.
  */
 export enum ItemCategoryCode {
@@ -21,24 +21,29 @@ export enum ItemCategoryCode {
     SCHEDULE = 'IC05'
 }
 
-export function getItemCategoryCode( type: string) {
-    switch(type) {
+export function getItemCategoryCode(type: string): string {
+    let returnText = ItemCategoryCode.FLIGHT;
+    switch (type) {
         case 'flight':
-            return ItemCategoryCode.FLIGHT;
-        break;
+            returnText = ItemCategoryCode.FLIGHT;
+            break;
+
         case 'hotels':
-            return ItemCategoryCode.HOTELS;
-        break;
+            returnText = ItemCategoryCode.HOTELS;
+            break;
+
         case 'rent':
-            return ItemCategoryCode.RENT;
-        break;
+            returnText = ItemCategoryCode.RENT;
+            break;
+
         case 'activity':
-            return ItemCategoryCode.ACTIVITY;
-        break;
+            returnText = ItemCategoryCode.ACTIVITY;
+            break;
+
         case 'schedule':
-            return ItemCategoryCode.SCHEDULE;
-        break;            
-        default:
-          return ItemCategoryCode.FLIGHT;
+            returnText = ItemCategoryCode.SCHEDULE;
+            break;
     }
+
+    return returnText;
 }

@@ -1,18 +1,17 @@
 import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Router, ActivatedRoute } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { take, takeWhile } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import { Store } from '@ngrx/store';
 
 import { upsertFlightSearchResult } from 'src/app/store/flight-common/flight-search-result/flight-search-result.actions';
 
 import { TranslateService } from '@ngx-translate/core';
-
-import { BsModalService } from 'ngx-bootstrap/modal';
 import { LoadingBarService } from '@ngx-loading-bar/core';
+import { BsModalService } from 'ngx-bootstrap/modal';
 
 import * as _ from 'lodash';
 import * as moment from 'moment';
@@ -23,6 +22,7 @@ import { SeoCanonicalService } from 'src/app/common-source/services/seo-canonica
 import { ApiAlertService } from '@/app/common-source/services/api-alert/api-alert.service';
 
 import { HeaderTypes } from 'src/app/common-source/enums/header-types.enum';
+import { FlightStore } from '@/app/common-source/enums/flight/flight-store.enum';
 
 import { BasePageComponent } from '../base-page/base-page.component';
 import { AirtelModalScheduleComponent } from 'src/app/common-source/modal-components/airtel-modal-schedule/airtel-modal-schedule.component';
@@ -30,6 +30,7 @@ import { FlightModalDetailFilterComponent } from 'src/app/common-source/modal-co
 import { FlightModalAlignFilterComponent } from 'src/app/common-source/modal-components/flight-modal-align-filter/flight-modal-align-filter.component';
 import { FlightModalPriceAlarmComponent } from 'src/app/common-source/modal-components/flight-modal-price-alarm/flight-modal-price-alarm.component';
 import { AirtelModalResearchComponent } from 'src/app/common-source/modal-components/airtel-modal-research/airtel-modal-research.component';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
 
 @Component({
     selector: 'app-airtel-search-result-come-page',
@@ -59,11 +60,6 @@ export class AirtelSearchResultComePageComponent extends BasePageComponent imple
     bsModalAlarmRef: any;
 
     rxAlive: any = true;
-
-    configInfo: any = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
 
     infiniteScrollConfig: any = {
         distance: 1,
@@ -207,7 +203,7 @@ export class AirtelSearchResultComePageComponent extends BasePageComponent imple
      */
     async flightSearch($resolveData) {
         // ---------[api 호출 | 항공편 리스트(오는편)]
-        // const bsModalLoadingRef = this.bsModalService.show(CommonLoadingModalComponent, { ...this.configInfo });
+        // const bsModalLoadingRef = this.bsModalService.show(CommonLoadingModalComponent, { ...ConfigInfo });
 
         await this.apiflightSvc.POST_FLIGHT_LIST_ITINERARY($resolveData)
             .toPromise()
@@ -217,7 +213,7 @@ export class AirtelSearchResultComePageComponent extends BasePageComponent imple
                     this.resultList = _.cloneDeep(res);
 
                     console.info('[스토어에 flight-list-rs 저장]');
-                    this.modelInit('flight-list-rs', this.resultList);
+                    this.modelInit(FlightStore.STORE_FLIGHT_LIST_RS, this.resultList);
 
                     this.loadingBool = false;
                     this.loadingBar.complete();
@@ -226,7 +222,7 @@ export class AirtelSearchResultComePageComponent extends BasePageComponent imple
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
         // bsModalLoadingRef.hide();
         console.info('[3. API 호출 끝]');
@@ -265,7 +261,7 @@ export class AirtelSearchResultComePageComponent extends BasePageComponent imple
             rq: this.flightStepRQ
         };
 
-        const bsModalRef = this.bsModalService.show(AirtelModalScheduleComponent, { initialState, ...this.configInfo });
+        const bsModalRef = this.bsModalService.show(AirtelModalScheduleComponent, { initialState, ...ConfigInfo });
 
         this.subscriptionList.push(
             this.bsModalService.onHide
@@ -347,7 +343,7 @@ export class AirtelSearchResultComePageComponent extends BasePageComponent imple
      */
     onDetailFilter() {
         console.info('[ 필터 | 상세 ]');
-        this.bsModalFilterRef = this.bsModalService.show(FlightModalDetailFilterComponent, { ...this.configInfo });
+        this.bsModalFilterRef = this.bsModalService.show(FlightModalDetailFilterComponent, { ...ConfigInfo });
     }
 
     /**
@@ -355,15 +351,14 @@ export class AirtelSearchResultComePageComponent extends BasePageComponent imple
      */
     onAlignFilter() {
         console.info('[ 필터 | 정렬 ]');
-        this.bsModalAlignRef = this.bsModalService.show(FlightModalAlignFilterComponent, { ...this.configInfo });
+        this.bsModalAlignRef = this.bsModalService.show(FlightModalAlignFilterComponent, { ...ConfigInfo });
     }
 
     /**
      * 가격 알람 모달
      */
     onAlarm($ctx) {
-
-        $ctx.bsModalAlarmRef = $ctx.bsModalService.show(FlightModalPriceAlarmComponent, { ...this.configInfo });
+        $ctx.bsModalAlarmRef = $ctx.bsModalService.show(FlightModalPriceAlarmComponent, { ...ConfigInfo });
     }
 
     onBackBtnClick($ctx) {
@@ -373,11 +368,10 @@ export class AirtelSearchResultComePageComponent extends BasePageComponent imple
 
     onChangeBtnClick($ctx) {
         console.info('[변경 버튼 클릭]');
-        $ctx.bsModalChangeRef = $ctx.bsModalService.show(AirtelModalResearchComponent, { ...this.configInfo });
+        $ctx.bsModalChangeRef = $ctx.bsModalService.show(AirtelModalResearchComponent, { ...ConfigInfo });
 
         this.subscriptionList.push(
             $ctx.bsModalService.onHide
-                .pipe(takeWhile(() => $ctx.rxAlive))
                 .subscribe(
                     () => {
                         const path = $ctx.bsModalChangeRef.content.naviPath;

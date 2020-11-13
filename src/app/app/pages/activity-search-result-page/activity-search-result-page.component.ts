@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewEncapsulation, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 
 import { Store } from '@ngrx/store';
@@ -25,9 +25,11 @@ import { ApiAlertService } from '@/app/common-source/services/api-alert/api-aler
 
 import { environment } from '@/environments/environment';
 
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
 import { ActivityCommon } from '@/app/common-source/enums/activity/activity-common.enum';
-import { ActivityInput } from '@/app/common-source/enums/activity/activity-input.enum';
 import { ActivityStore } from '@/app/common-source/enums/activity/activity-store.enum';
+import { ActivitySearch } from '@/app/common-source/enums/activity/activity-search.enum';
 
 import { BasePageComponent } from '../base-page/base-page.component';
 import { ActivityModalAlignFilterComponent } from './modal-components/activity-modal-align-filter/activity-modal-align-filter.component';
@@ -64,7 +66,6 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
 
     loadingBool: Boolean = false;
     rxAlive: boolean = true;
-    modalDestinationSearch$: Observable<any>; // 검색 모달창
     transactionSetId: any;
 
     bsModalOptionRef: BsModalRef;
@@ -88,11 +89,11 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
         public metaTagService: Meta,
         public seoCanonicalService: SeoCanonicalService,
         public translate: TranslateService,
-        private readonly store: Store<any>,
-        private readonly route: ActivatedRoute,
-        private readonly router: Router,
-        private readonly apiActivityService: ApiActivityService,
-        private readonly activityComServiceService: ActivityComServiceService,
+        private store: Store<any>,
+        private route: ActivatedRoute,
+        private router: Router,
+        private apiActivityService: ApiActivityService,
+        private activityComServiceService: ActivityComServiceService,
         private bsModalService: BsModalService,
         private loadingBar: LoadingBarService,
         private countdownTimerService: CountdownTimerService,
@@ -155,7 +156,7 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
                 .subscribe(
                     (status: any) => {
                         console.info('[status]', status);
-                        if (status === 'END') {
+                        if (status === 'STOP') {
                             this.rxAlive = false;
                             console.info('[status]', status);
                             console.info('[rxAlive]', this.rxAlive);
@@ -263,7 +264,7 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 
@@ -307,7 +308,7 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
         let rqCondition = {};
         let tmpPath = '';
 
-        if (this.vm.searchType === ActivityInput.SEARCH_TYPE_DETAIL) {
+        if (this.vm.searchType === ActivitySearch.SEARCH_TYPE_DETAIL) {
             if (this.vm.detailId === null) { // Defensive coding
                 return;
             }
@@ -400,19 +401,14 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
 
     /**
      * 모든 bsModal 창 닫기
      */
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -434,17 +430,6 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
 
       const initialState: any = {
         storeId: "search",
-        majorDestinationRq: { // 주요도시 API RQ
-          rq: {
-            currency: 'KRW', // TODO - user setting
-            language: 'KO', // TODO - user setting
-            stationTypeCode: environment.STATION_CODE,
-            condition: {
-              itemCategoryCode: itemCategoryCode,
-              compCode: environment.COMP_CODE
-            }
-          }
-        },
         destinationRq: { // 목적지검색 API RQ
           rq: {
             currency: 'KRW', // TODO - user setting
@@ -459,15 +444,9 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
         }
       };
 
-      // ngx-bootstrap config
-      const configInfo = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-      };
-
       console.info('[initialState]', initialState);
 
-      this.bsModalRef = this.bsModalService.show(ActivityModalDestinationComponent, {initialState, ...configInfo});
+      this.bsModalRef = this.bsModalService.show(ActivityModalDestinationComponent, {initialState, ...ConfigInfo});
     }
     */
 
@@ -492,13 +471,7 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
             optionType: sType
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalOptionRef = this.bsModalService.show(ActivityModalOptionComponent, { initialState, ...configInfo });
+        this.bsModalOptionRef = this.bsModalService.show(ActivityModalOptionComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -509,13 +482,7 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
             storeId: 'activity-detail-filter'
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalFilterRef = this.bsModalService.show(ActivityModalDetailFilterComponent, { initialState, ...configInfo });
+        this.bsModalFilterRef = this.bsModalService.show(ActivityModalDetailFilterComponent, { initialState, ...ConfigInfo });
     }
 
     /**
@@ -526,13 +493,7 @@ export class ActivitySearchResultPageComponent extends BasePageComponent impleme
             storeId: 'activity-align-filter'
         };
 
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-
-        this.bsModalAlignRef = this.bsModalService.show(ActivityModalAlignFilterComponent, { initialState, ...configInfo });
+        this.bsModalAlignRef = this.bsModalService.show(ActivityModalAlignFilterComponent, { initialState, ...ConfigInfo });
     }
 
 

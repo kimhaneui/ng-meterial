@@ -1,17 +1,26 @@
 import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
-import { BasePageComponent } from '../base-page/base-page.component';
-import { Store } from '@ngrx/store';
 import { Title, Meta } from '@angular/platform-browser';
-import { SeoCanonicalService } from 'src/app/common-source/services/seo-canonical/seo-canonical.service';
-import { TranslateService } from '@ngx-translate/core';
-import { Router, ActivatedRoute } from '@angular/router';
-import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
-import { MyModalMileageNoticeComponent } from './modal-components/my-modal-mileage-notice/my-modal-mileage-notice.component';
-import { HeaderTypes } from '../../common-source/enums/header-types.enum';
-import { take } from 'rxjs/operators';
-import { upsertMyMileage } from 'src/app/store/my-mileage/my-mileage/my-mileage.actions';
-import * as _ from 'lodash';
+import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
+
+import { Store } from '@ngrx/store';
+
+import { upsertMyMileage } from 'src/app/store/my-mileage/my-mileage/my-mileage.actions';
+
+import { TranslateService } from '@ngx-translate/core';
+
+import * as _ from 'lodash';
+
+import { SeoCanonicalService } from 'src/app/common-source/services/seo-canonical/seo-canonical.service';
+
+import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+import { ConfigInfo } from '@/app/common-source/models/common/modal.model';
+
+import { HeaderTypes } from '../../common-source/enums/header-types.enum';
+
+import { BasePageComponent } from '../base-page/base-page.component';
+import { MyModalMileageNoticeComponent } from './modal-components/my-modal-mileage-notice/my-modal-mileage-notice.component';
 
 @Component({
     selector: 'app-my-mileage-list-page',
@@ -90,7 +99,7 @@ export class MyMileageListPageComponent extends BasePageComponent implements OnI
     }
 
     private closeAllModals() {
-        for (let i = 1; i <= this.bsModalService.getModalsCount(); i++) {
+        for (let i = 1; i <= this.bsModalService.getModalsCount(); ++i) {
             this.bsModalService.hide(i);
         }
     }
@@ -115,7 +124,6 @@ export class MyMileageListPageComponent extends BasePageComponent implements OnI
         //         this.apiRentService.POST_RENT_LIST($resolveData.listFilterRq)
         //     ])
         //         .pipe(
-        //             takeWhile(val => this.rxAlive),
         //             catchError(([err1, err2]) => of([err1, err2])
         //             )
         //                 .subscribe(([res1, res2]) => {
@@ -174,10 +182,6 @@ export class MyMileageListPageComponent extends BasePageComponent implements OnI
             ],
             title: 'Modal with component'
         };
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
-        this.bsModalRef = this.bsModalService.show(MyModalMileageNoticeComponent, { initialState, ...configInfo });
+        this.bsModalRef = this.bsModalService.show(MyModalMileageNoticeComponent, { initialState, ...ConfigInfo });
     }
 }

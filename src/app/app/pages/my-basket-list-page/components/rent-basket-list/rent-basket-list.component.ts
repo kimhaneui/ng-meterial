@@ -96,7 +96,7 @@ export class RentBasketListComponent extends BaseChildComponent implements OnIni
                 }
             })
             .catch((err: any) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
 
 

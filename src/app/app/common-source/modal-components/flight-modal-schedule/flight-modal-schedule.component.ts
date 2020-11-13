@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { Store } from '@ngrx/store';
 
 import { upsertFlightSessionStorage } from '@/app/store/flight-common/flight-session-storage/flight-session-storage.actions';
+import { upsertFlightSearchResult } from '@/app/store/flight-common/flight-search-result/flight-search-result.actions';
 
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 
@@ -15,6 +16,8 @@ import { ApiFlightService } from '@/app/api/flight/api-flight.service';
 import { ApiAlertService } from '../../services/api-alert/api-alert.service';
 
 import { environment } from '@/environments/environment';
+
+import { ConfigInfo } from '../../models/common/modal.model';
 
 import { HeaderTypes } from '../../enums/header-types.enum';
 import { TravelerTypeKr } from '../../enums/common/traveler-type.enum';
@@ -64,11 +67,6 @@ export class FlightModalScheduleComponent extends BaseChildComponent implements 
     bsModalPaymentRef: BsModalRef;
 
     rxAlive: any = true;
-
-    configInfo = {
-        class: 'm-ngx-bootstrap-modal',
-        animated: false
-    };
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
@@ -157,13 +155,17 @@ export class FlightModalScheduleComponent extends BaseChildComponent implements 
                                 id: FlightStore.STORE_FLIGHT_LIST_RS,
                                 option: _.cloneDeep(res)
                             });
+                            this.upsertOne({
+                                id: FlightStore.STORE_FLIGHT_LIST_RS,
+                                option: _.cloneDeep(res)
+                            });
                             this.setViewModel();
                         } else {
                             this.alertService.showApiAlert(res.errorMessage);
                         }
                     },
                     (err) => {
-                        this.alertService.showApiAlert(err);
+                        this.alertService.showApiAlert(err.error.message);
                     }
                 )
         ];
@@ -363,10 +365,8 @@ export class FlightModalScheduleComponent extends BaseChildComponent implements 
                 rs: this.dataModel.result
             };
 
-            console.log('initialState promotionRq >>', _.cloneDeep(initialState));
-
             // 결제 수단 선택모달
-            this.bsModalPaymentRef = this.bsModalSvc.show(FlightModalPaymentComponent, { initialState, ...this.configInfo });
+            this.bsModalPaymentRef = this.bsModalSvc.show(FlightModalPaymentComponent, { initialState, ...ConfigInfo });
             // 모달 닫힘
             this.subscriptionList.push(
                 this.bsModalSvc.onHide
@@ -430,8 +430,8 @@ export class FlightModalScheduleComponent extends BaseChildComponent implements 
             stationTypeCode: environment.STATION_CODE,
             condition: {
                 tripTypeCode: this.viewModel.flightTripType,
-                // fare: flightArray[0].price.fares[0],
-                // itineraries: flightArray[0].itineraries
+                fare: flightArray[0].price.fares[0],
+                itineraries: flightArray[0].itineraries
             }
         };
     }
@@ -445,9 +445,6 @@ export class FlightModalScheduleComponent extends BaseChildComponent implements 
 
         return flights.map(
             (item: any) => {
-
-                console.log('이거는 로그가 언제 찍히냐? 짜증나 죽것네 : ', item);
-
                 return {
                     stationTypeCode: environment.STATION_CODE,
                     currency: 'KRW',
@@ -552,6 +549,12 @@ export class FlightModalScheduleComponent extends BaseChildComponent implements 
     private upsertOneSession(data: any) {
         this.store.dispatch(
             upsertFlightSessionStorage({ flightSessionStorage: data })
+        );
+    }
+
+    private upsertOne(data: any) {
+        this.store.dispatch(
+            upsertFlightSearchResult({ flightSearchResult: data })
         );
     }
 

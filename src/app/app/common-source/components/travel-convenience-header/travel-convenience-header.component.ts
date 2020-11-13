@@ -1,10 +1,10 @@
 import { Component, Inject, Input, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { isPlatformBrowser, isPlatformServer, Location } from '@angular/common';
 import { Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import { upsertCommonLayout } from '../../../store/common/common-layout/common-layout.actions';
 
@@ -36,17 +36,15 @@ export class TravelConvenienceHeaderComponent implements OnInit, OnDestroy {
         sideMenuBool: false
     };
 
-    vm$: Observable<any>;
-
     private subscriptionList: Subscription[];
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
+        public commonLayoutSideMenuService: CommonLayoutSideMenuService,
         private store: Store<any>,
         private translateService: TranslateService,
         private location: Location,
         private router: Router,
-        public commonLayoutSideMenuService: CommonLayoutSideMenuService
     ) {
         this.subscriptionList = [];
     }
@@ -61,7 +59,6 @@ export class TravelConvenienceHeaderComponent implements OnInit, OnDestroy {
         }
 
         this.headerTitleInit();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -98,19 +95,12 @@ export class TravelConvenienceHeaderComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * 옵져버블 초기화
-     */
-    observableInit() {
-        this.vm$ = this.store
-            .pipe(select(commonLayoutSelectors.selectComponentStateVm));
-    }
-
-    /**
      * 서브스크라이브 초기화
      */
     subscribeInit() {
         this.subscriptionList.push(
-            this.vm$
+            this.store
+                .select(commonLayoutSelectors.selectComponentStateVm)
                 .subscribe(
                     (ev) => {
                         if (ev) {

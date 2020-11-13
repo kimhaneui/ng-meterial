@@ -1,10 +1,9 @@
 import { Component, Inject, OnInit, ElementRef, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 
 import * as activitySearchResultPageSelectors from '../../../../store/activity-search-result-page/activity-result-search/activity-result-search.selectors';
 
@@ -62,28 +61,25 @@ export class ActivityModalDetailFilterComponent extends BaseChildComponent imple
     private durationMax: number;
 
     rxAlive: boolean = true;
-    activityListRq$: Observable<any>; // 액티비티 검색 request
-    activityListRs$: Observable<any>; // 액티비티 검색 결과
     loadingBool: Boolean = false;
     ctx: any = this;
     transactionSetId: any;
 
     constructor(
         @Inject(PLATFORM_ID) public platformId: any,
+        public translateService: TranslateService,
         private store: Store<any>,
         private router: Router,
         private fb: FormBuilder,
-        public translateService: TranslateService,
         private el: ElementRef,
-        private readonly activityComServiceService: ActivityComServiceService,
-        public bsModalRef: BsModalRef
+        private activityComServiceService: ActivityComServiceService,
+        private bsModalRef: BsModalRef
     ) {
         super(platformId);
         this.element = this.el.nativeElement;
         this.subscriptionList = [];
 
         this.mainFormCreate();
-        this.observableInit();
         this.subscribeInit();
     }
 
@@ -117,17 +113,10 @@ export class ActivityModalDetailFilterComponent extends BaseChildComponent imple
         });
     }
 
-    observableInit() {
-        this.activityListRq$ = this.store
-            .pipe(select(activitySearchResultPageSelectors.getSelectId(ActivityStore.STORE_RESULT_LIST_RQ)));
-        this.activityListRs$ = this.store
-            .pipe(select(activitySearchResultPageSelectors.getSelectId(ActivityStore.STORE_RESULT_LIST_RS)));
-    }
-
     subscribeInit() {
         this.subscriptionList.push(
-            this.activityListRq$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(activitySearchResultPageSelectors.getSelectId(ActivityStore.STORE_RESULT_LIST_RQ))
                 .subscribe(
                     (ev: any) => {
                         if (ev) {
@@ -141,8 +130,8 @@ export class ActivityModalDetailFilterComponent extends BaseChildComponent imple
         );
 
         this.subscriptionList.push(
-            this.activityListRs$
-                .pipe(takeWhile(() => this.rxAlive))
+            this.store
+                .select(activitySearchResultPageSelectors.getSelectId(ActivityStore.STORE_RESULT_LIST_RS))
                 .subscribe(
                     (ev: any) => {
                         if (ev) {
@@ -407,7 +396,6 @@ export class ActivityModalDetailFilterComponent extends BaseChildComponent imple
         this.modalClose();
 
         console.info('[onSubmit]', $form.value);
-        const forFilter = this.forFilter;
 
 
         this.rqInfo.rq.condition.filter = {};

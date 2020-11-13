@@ -60,7 +60,7 @@ export class MyModalActivityBookerModifyComponent extends BaseChildComponent imp
                 }
             })
             .catch((err) => {
-                this.alertService.showApiAlert(err);
+                this.alertService.showApiAlert(err.error.message);
             });
     }
 

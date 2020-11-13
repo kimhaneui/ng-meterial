@@ -64,7 +64,7 @@
                                     </ng-template>
                                 </dl>
                             </div>
-                            <div class="price">
+                            <div class="price" *ngIf="rentRuleRs.rateDetails !== undefined || null">
                                 <dl>
                                     <dt>
                                         <span>포함사항</span>
@@ -219,10 +219,11 @@
                                 <div class="row" *ngIf="this.locationType===true">
                                     <div class="row-title">면허종별</div>
                                     <div class="select-box line">
-                                        <select name="" id="" required>
+                                        <select [formControlName]="'license'" id="" required>
                                             <option value="" disabled selected>면허증을 선택해 주세요.</option>
-                                            <option value="">1종 보통</option>
-                                            <option value="">2종 보통</option>
+                                            <option value="1Large">1종 대형</option>
+                                            <option value="1Normal">1종 보통</option>
+                                            <option value="2Normal">2종 보통</option>
                                         </select>
                                     </div>
                                     <p class="text-link mt10">

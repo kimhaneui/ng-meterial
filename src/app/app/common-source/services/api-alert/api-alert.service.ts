@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -7,9 +8,9 @@ import * as _ from 'lodash';
 
 import { ApiAlert } from '../../models/common/api-alert.model';
 import { PageUrl, PageUrlList } from '../../models/common/url.model';
+import { ConfigInfo } from '../../models/common/modal.model';
 
 import { CommonModalAlertComponent } from '@/app/common-source/modal-components/common-modal-alert/common-modal-alert.component';
-import { Location } from '@angular/common';
 
 @Injectable({
     providedIn: 'root'
@@ -32,12 +33,21 @@ export class ApiAlertService {
         this.urlList = PageUrlList;
     }
 
-    public showApiAlert(message?: string): void {
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false
-        };
+    private returnMain = () => {
+        let flag: boolean = true;
+        let returnUrl: string = '';
+        this.urlList.map(
+            (item: PageUrl) => {
+                if (flag && _.startsWith(this.nowUrl, item.url)) {
+                    flag = false;
+                    returnUrl = item.returnUrl;
+                }
+            }
+        );
+        window.location.replace(returnUrl);
+    };
 
+    public showApiAlert(message?: string): void {
         if (!message) {
             message = '요청하신 서비스를 처리하는 도중에 일시적인 시스템 에러가 발생하였습니다.';
         }
@@ -51,21 +61,8 @@ export class ApiAlertService {
             }
         };
 
-        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...configInfo });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo });
     }
-
-    public returnMain = () => {
-        const flag: boolean = true;
-        let returnUrl: string = '';
-        this.urlList.map(
-            (item: PageUrl) => {
-                if (flag && _.startsWith(this.nowUrl, item.url)) {
-                    returnUrl = item.returnUrl;
-                }
-            }
-        );
-        window.location.replace(returnUrl);
-    };
 
     public goBackApiAlert(message?: string): void {
         if (!message) {
@@ -91,15 +88,6 @@ export class ApiAlertService {
                 }
             }
         };
-        // ngx-bootstrap config
-        const configInfo = {
-            class: 'm-ngx-bootstrap-modal',
-            animated: false,
-            keyboard: false
-        };
-        this.bsModalService.show(CommonModalAlertComponent, {
-            initialState,
-            ...configInfo,
-        });
+        this.bsModalService.show(CommonModalAlertComponent, { initialState, ...ConfigInfo, });
     }
 }

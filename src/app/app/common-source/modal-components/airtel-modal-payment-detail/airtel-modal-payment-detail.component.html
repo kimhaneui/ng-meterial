@@ -10,76 +10,74 @@
     <!-- modal contents -->
     <div class="modal-contents">
         <div class="page-contents-type3">
-            <ng-container *ngIf="flightListRs$ | async as list">
-                <ng-container *ngFor="let item of list.option.result.selected.flights">
-                    <ng-container *ngFor="let item1 of item.price.fares[0].passengerFares; index as i">
-                        <div class="item-group line" *ngIf="item1.ageTypeCode ==='ADT'">
-                            <div class="item-row col">
-                                <div class="left"><strong class="color-main2">성인 항공권</strong></div>
-                                <div class="right"><strong class="color-point2">{{item1.amountSum | number}}원*{{item1.paxCount}}</strong></div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">항공요금</div>
-                                <div class="right">134,900원</div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">유류할증료</div>
-                                <div class="right">26,200원</div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">제세공과금</div>
-                                <div class="right">69,000원</div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">발권수수료</div>
-                                <div class="right">10,000원</div>
-                            </div>
+            <ng-container *ngFor="let item of list.option.result.selected.flights">
+                <ng-container *ngFor="let item1 of item.price.fares[0].passengerFares; index as i">
+                    <div class="item-group line" *ngIf="item1.ageTypeCode ==='ADT'">
+                        <div class="item-row col">
+                            <div class="left"><strong class="color-main2">성인 항공권</strong></div>
+                            <div class="right"><strong class="color-point2">{{item1.amountSum | number}}원*{{item1.paxCount}}</strong></div>
                         </div>
-                        <div class="item-group line" *ngIf="item1.ageTypeCode ==='CHD'">
-                            <div class="item-row col">
-                                <div class="left"><strong class="color-main2">소아 항공권</strong></div>
-                                <div class="right"><strong class="color-point2">{{item1.amountSum | number}}원*{{item1.paxCount}}</strong></div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">항공요금</div>
-                                <div class="right">134,900원</div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">유류할증료</div>
-                                <div class="right">26,200원</div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">제세공과금</div>
-                                <div class="right">69,000원</div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">발권수수료</div>
-                                <div class="right">10,000원</div>
-                            </div>
+                        <div class="item-row col">
+                            <div class="left">항공요금</div>
+                            <div class="right">134,900원</div>
                         </div>
-                        <div class="item-group line" *ngIf="item1.ageTypeCode ==='INF'">
-                            <div class="item-row col">
-                                <div class="left"><strong class="color-main2">유아 항공권</strong></div>
-                                <div class="right"><strong class="color-point2">{{item1.amountSum | number}}원*{{item1.paxCount}}</strong></div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">항공요금</div>
-                                <div class="right">134,900원</div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">유류할증료</div>
-                                <div class="right">26,200원</div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">제세공과금</div>
-                                <div class="right">69,000원</div>
-                            </div>
-                            <div class="item-row col">
-                                <div class="left">발권수수료</div>
-                                <div class="right">10,000원</div>
-                            </div>
+                        <div class="item-row col">
+                            <div class="left">유류할증료</div>
+                            <div class="right">26,200원</div>
                         </div>
-                    </ng-container>
+                        <div class="item-row col">
+                            <div class="left">제세공과금</div>
+                            <div class="right">69,000원</div>
+                        </div>
+                        <div class="item-row col">
+                            <div class="left">발권수수료</div>
+                            <div class="right">10,000원</div>
+                        </div>
+                    </div>
+                    <div class="item-group line" *ngIf="item1.ageTypeCode ==='CHD'">
+                        <div class="item-row col">
+                            <div class="left"><strong class="color-main2">소아 항공권</strong></div>
+                            <div class="right"><strong class="color-point2">{{item1.amountSum | number}}원*{{item1.paxCount}}</strong></div>
+                        </div>
+                        <div class="item-row col">
+                            <div class="left">항공요금</div>
+                            <div class="right">134,900원</div>
+                        </div>
+                        <div class="item-row col">
+                            <div class="left">유류할증료</div>
+                            <div class="right">26,200원</div>
+                        </div>
+                        <div class="item-row col">
+                            <div class="left">제세공과금</div>
+                            <div class="right">69,000원</div>
+                        </div>
+                        <div class="item-row col">
+                            <div class="left">발권수수료</div>
+                            <div class="right">10,000원</div>
+                        </div>
+                    </div>
+                    <div class="item-group line" *ngIf="item1.ageTypeCode ==='INF'">
+                        <div class="item-row col">
+                            <div class="left"><strong class="color-main2">유아 항공권</strong></div>
+                            <div class="right"><strong class="color-point2">{{item1.amountSum | number}}원*{{item1.paxCount}}</strong></div>
+                        </div>
+                        <div class="item-row col">
+                            <div class="left">항공요금</div>
+                            <div class="right">134,900원</div>
+                        </div>
+                        <div class="item-row col">
+                            <div class="left">유류할증료</div>
+                            <div class="right">26,200원</div>
+                        </div>
+                        <div class="item-row col">
+                            <div class="left">제세공과금</div>
+                            <div class="right">69,000원</div>
+                        </div>
+                        <div class="item-row col">
+                            <div class="left">발권수수료</div>
+                            <div class="right">10,000원</div>
+                        </div>
+                    </div>
                 </ng-container>
             </ng-container>
             <div class="item-group line">
@@ -88,7 +86,7 @@
                         <strong class="color-main2">총 결제금액</strong>
                     </div>
                     <div class="right">
-                        <ng-container *ngFor="let item of (flightListRs$ | async)?.option.result.selected.flights">
+                        <ng-container *ngFor="let item of list.option.result.selected.flights">
                             <strong class="font-lg color-point2">{{item.price.fares[0].amountSum | number}}원</strong>
                         </ng-container>
                     </div>
